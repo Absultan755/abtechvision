@@ -78,6 +78,20 @@
             text-decoration: none;
             cursor: pointer;
         }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: #3b82f6;
+        }
     </style>
 </head>
 <body class="text-gray-800">
@@ -398,25 +412,47 @@
         </div>
     </div>
 
-    <script>
-        // No Firebase imports needed for Local Storage
-        
+    <div id="loading-overlay" class="loading-overlay">
+        <p>Loading...</p>
+    </div>
+
+    <script type="module">
+        // Firebase SDK Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+        // Firebase Configuration (REPLACE WITH YOUR OWN FIREBASE CONFIG)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCvanzDxVT3fRzNwbgQVOf1pq5-JViS1RU",
+            authDomain: "abtechvision-db.firebaseapp.com",
+            projectId: "abtechvision-db",
+            storageBucket: "abtechvision-db.firebasestorage.app",
+            messagingSenderId: "596780697856",
+            appId: "1:596780697856:web:9932d24111f9df77998be5",
+            measurementId: "G-GGLNBGMW8W"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
         // Global variables
-        const LOCAL_STORAGE_KEY = 'ab_techvision_mcqs_by_subject'; // Updated key for subject-based storage
-        const LOCAL_STORAGE_BLOG_KEY = 'ab_techvision_blog_posts'; // New key for blog posts
-        const LOCAL_STORAGE_PAST_PAPERS_KEY = 'ab_techvision_past_papers'; // New key for past papers
-        
-        let allSubjectsData = {}; // Stores data like { "SubjectName": [{mcq1}, {mcq2}], "AnotherSubject": [...] }
+        let currentUser = null; // To store authenticated user info
+        let allSubjectsData = {}; // Stores data like { "subjectDocId": {name: "SubjectName", mcqs: [{mcq1}, {mcq2}]} }
         let allBlogPosts = []; // Stores all blog posts
         let allPastPapersData = []; // Stores all past paper categories and their content
 
-        let currentSelectedSubject = null; // Tracks the currently viewed subject
+        let currentSelectedSubject = null; // Tracks the currently viewed subject's Firestore doc ID
         let currentQuizMcqs = []; // MCQs for the current quiz session
         let currentQuestionIndex = 0;
         let quizScore = 0;
         let editingMcqId = null; // To store the ID of the MCQ being edited
         let editingBlogPostId = null; // To store the ID of the blog post being edited
-        let currentSelectedPastPaperCategory = null; // Tracks the currently viewed past paper category
+        let currentSelectedPastPaperCategory = null; // Tracks the currently viewed past paper category's Firestore doc ID
         let editingPdfImageId = null; // To store the ID of the PDF/Image being edited
 
         // DOM Elements
@@ -424,8 +460,8 @@
         const sections = document.querySelectorAll('.section');
         const mcqsDisplay = document.getElementById('mcqs-display');
         const addMcqForm = document.getElementById('add-mcq-form');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const startQuizBtn = document.getElementById('start-quiz-btn'); // This button is now inside subject-detail-view
+        const loadingIndicator = document.getElementById('loading-indicator'); // This is now a general overlay
+        const startQuizBtn = document.getElementById('start-quiz-btn');
         const quizSection = document.getElementById('quiz-section');
         const addEditMcqSection = document.getElementById('add-edit-mcq-section');
         const mcqFormTitle = document.getElementById('mcq-form-title');
@@ -437,7 +473,7 @@
         const prevQuestionBtn = document.getElementById('prev-question-btn');
         const nextQuestionBtn = document.getElementById('next-question-btn');
         const quizResult = document.getElementById('quiz-result');
-        const quizBackToSubjectBtn = document.getElementById('quiz-back-to-subject-btn'); // New button for quiz to subject detail
+        const quizBackToSubjectBtn = document.getElementById('quiz-back-to-subject-btn');
 
         // Subject-related DOM Elements
         const subjectsListView = document.getElementById('subjects-list-view');
@@ -446,7 +482,7 @@
         const addSubjectForm = document.getElementById('add-subject-form');
         const newSubjectNameInput = document.getElementById('new-subject-name');
         const subjectDetailView = document.getElementById('subject-detail-view');
-        const backToSubjectsBtn = document.getElementById('back-to-subjects-btn'); // Button in subject detail view
+        const backToSubjectsBtn = document.getElementById('back-to-subjects-btn');
         const currentSubjectTitle = document.getElementById('current-subject-title');
 
         // Blog-related DOM Elements
@@ -473,12 +509,11 @@
         const addPdfImageForm = document.getElementById('add-pdf-image-form');
         const pdfImageNameInput = document.getElementById('pdf-image-name');
         const pdfImageUrlInput = document.getElementById('pdf-image-url');
-        const pdfImageFileInput = document.getElementById('pdf-image-file'); // New file input
+        const pdfImageFileInput = document.getElementById('pdf-image-file');
         const pdfImageTypeSelect = document.getElementById('pdf-image-type');
         const submitPdfImageBtn = document.getElementById('submit-pdf-image-btn');
         const cancelPdfImageEditBtn = document.getElementById('cancel-pdf-image-edit-btn');
         const pdfImageDisplay = document.getElementById('pdf-image-display');
-
 
         // Modal Elements
         const modal = document.getElementById('myModal');
@@ -486,11 +521,20 @@
         const modalActions = document.getElementById('modal-actions');
         const modalConfirmBtn = document.getElementById('modal-confirm-btn');
         const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const loadingOverlay = document.getElementById('loading-overlay');
 
-        // Function to show custom modal messages
+        // --- Utility Functions ---
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
         function showMessage(message, type = 'info', callback = null) {
             modalMessage.textContent = message;
-            modalActions.classList.add('hidden'); // Hide actions by default
+            modalActions.classList.add('hidden');
             modalConfirmBtn.onclick = null;
             modalCancelBtn.onclick = null;
 
@@ -505,7 +549,6 @@
                     callback(false);
                 };
             } else {
-                // For info messages, close button handles it
                 document.querySelector('.close-button').onclick = function() {
                     modal.style.display = 'none';
                 };
@@ -513,270 +556,257 @@
             modal.style.display = 'flex';
         }
 
-        // Close modal when clicking outside of the modal content
         window.onclick = function(event) {
             if (event.target == modal) {
                 modal.style.display = 'none';
             }
         };
 
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log("DOMContentLoaded event fired. Script execution started.");
-
-            // Function to show a specific section (main tabs)
-            function showSection(targetId) {
-                console.log(`Attempting to show section: ${targetId}`);
-                sections.forEach(section => {
-                    section.classList.remove('active');
-                });
-                const targetSection = document.getElementById(targetId);
-                if (targetSection) {
-                    targetSection.classList.add('active');
-                    console.log(`Section '${targetId}' activated.`);
-                } else {
-                    console.warn(`Section with ID '${targetId}' not found.`);
-                }
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
             }
+            return array;
+        }
 
-            // Handle navigation clicks
-            navLinks.forEach(link => {
-                const targetId = link.getAttribute('data-target');
-                console.log(`Attaching click listener to nav-link for target: ${targetId}`);
-                link.addEventListener('click', function(event) {
-                    event.preventDefault(); // Prevent default anchor link behavior
-                    console.log(`Nav-link clicked for target: ${targetId}`);
-                    showSection(targetId);
+        // --- Firebase Authentication ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("Firebase Authenticated Anonymously:", currentUser.uid);
+                // Initial load after auth is ready
+                handleHashChange();
+            } else {
+                console.log("No user signed in. Signing in anonymously...");
+                signInAnonymously(auth)
+                    .then(() => {
+                        console.log("Anonymous sign-in successful.");
+                    })
+                    .catch((error) => {
+                        console.error("Anonymous sign-in failed:", error);
+                        showMessage("Failed to sign in. Some features might not work.", 'error');
+                    });
+            }
+        });
 
-                    // Hide all dynamic content sections by default
-                    subjectsListView.classList.add('hidden');
-                    subjectDetailView.classList.add('hidden');
-                    quizSection.classList.add('hidden');
-                    addEditBlogSection.classList.add('hidden');
-                    blogPostsDisplay.classList.add('hidden');
-                    pastPapersListView.classList.add('hidden');
-                    pastPaperDetailView.classList.add('hidden');
-                    
-                    // Show relevant sections based on targetId
-                    if (targetId === 'subjects') {
-                        showSubjectList(); // This will handle showing subjectsListView
-                    } else if (targetId === 'blog') {
-                        showBlogList(); // This will handle showing addEditBlogSection and blogPostsDisplay
-                    } else if (targetId === 'past-papers-section') {
-                        showPastPapersList(); // This will handle showing pastPapersListView
-                    }
-
-
-                    // Update URL hash without page reload for better user experience
-                    history.pushState(null, '', `#${targetId}`);
-                });
+        // --- Navigation and Section Display ---
+        function showSection(targetId) {
+            sections.forEach(section => {
+                section.classList.remove('active');
             });
-            console.log("Navigation links setup complete.");
-
-            // Handle initial load and back/forward button navigation
-            function handleHashChange() {
-                const hash = window.location.hash.substring(1); // Get hash without '#'
-                console.log(`handleHashChange called. Current hash: '${hash}'`);
-                if (hash) {
-                    showSection(hash);
-                    if (hash === 'subjects') {
-                        showSubjectList();
-                    } else if (hash === 'blog') {
-                        showBlogList();
-                    } else if (hash === 'past-papers-section') {
-                        showPastPapersList();
-                    }
-                } else {
-                    // Default to home section if no hash or invalid hash
-                    showSection('home');
-                }
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.classList.add('active');
             }
+        }
 
-            // Listen for hash changes (e.g., browser back/forward buttons)
-            window.addEventListener('hashchange', handleHashChange);
+        navLinks.forEach(link => {
+            const targetId = link.getAttribute('data-target');
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                showSection(targetId);
 
-            // Initial call to display the correct section based on URL hash or default to home
-            handleHashChange();
-
-            // --- Local Storage Functions ---
-
-            // Load all subjects data from Local Storage
-            function loadAllSubjectsData() {
-                try {
-                    const data = localStorage.getItem(LOCAL_STORAGE_KEY);
-                    return data ? JSON.parse(data) : {}; // Return an empty object if no data
-                } catch (e) {
-                    console.error("Error parsing data from Local Storage:", e);
-                    return {};
-                }
-            }
-
-            // Save all subjects data to Local Storage
-            function saveAllSubjectsData() {
-                try {
-                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allSubjectsData));
-                }
-                catch (e) {
-                    console.error("Error saving data to Local Storage:", e);
-                    showMessage("Error saving data. Local Storage might be full or blocked by your browser settings.", 'error');
-                }
-            }
-
-            // Load all blog posts from Local Storage
-            function loadBlogPostsFromLocalStorage() {
-                try {
-                    const data = localStorage.getItem(LOCAL_STORAGE_BLOG_KEY);
-                    return data ? JSON.parse(data) : [];
-                } catch (e) {
-                    console.error("Error parsing blog posts from Local Storage:", e);
-                    return [];
-                }
-            }
-
-            // Save all blog posts to Local Storage
-            function saveBlogPostsToLocalStorage() {
-                try {
-                    localStorage.setItem(LOCAL_STORAGE_BLOG_KEY, JSON.stringify(allBlogPosts));
-                } catch (e) {
-                    console.error("Error saving blog posts to Local Storage:", e);
-                    showMessage("Error saving blog posts. Local Storage might be full or blocked by your browser settings.", 'error');
-                }
-            }
-
-            // Load all past papers data from Local Storage
-            function loadPastPapersData() {
-                try {
-                    const data = localStorage.getItem(LOCAL_STORAGE_PAST_PAPERS_KEY);
-                    return data ? JSON.parse(data) : [];
-                } catch (e) {
-                    console.error("Error parsing past papers data from Local Storage:", e);
-                    return [];
-                }
-            }
-
-            // Save all past papers data to Local Storage
-            function savePastPapersData() {
-                try {
-                    localStorage.setItem(LOCAL_STORAGE_PAST_PAPERS_KEY, JSON.stringify(allPastPapersData));
-                } catch (e) {
-                    console.error("Error saving past papers data to Local Storage:", e);
-                    showMessage("Error saving past papers data. Local Storage might be full or blocked by your browser settings.", 'error');
-                }
-            }
-
-            // --- Subject Management Functions ---
-
-            function showSubjectList() {
-                subjectsListView.classList.remove('hidden');
+                // Hide all dynamic content sections by default
+                subjectsListView.classList.add('hidden');
                 subjectDetailView.classList.add('hidden');
                 quizSection.classList.add('hidden');
-                addEditBlogSection.classList.add('hidden'); 
+                addEditBlogSection.classList.add('hidden');
                 blogPostsDisplay.classList.add('hidden');
-                pastPapersListView.classList.add('hidden'); // Hide past papers elements
-                pastPaperDetailView.classList.add('hidden'); // Hide past papers elements
-                loadingIndicator.style.display = 'none'; // Hide loading indicator here
+                pastPapersListView.classList.add('hidden');
+                pastPaperDetailView.classList.add('hidden');
+                
+                // Show relevant sections based on targetId
+                if (targetId === 'subjects') {
+                    showSubjectList();
+                } else if (targetId === 'blog') {
+                    showBlogList();
+                } else if (targetId === 'past-papers-section') {
+                    showPastPapersList();
+                }
+                history.pushState(null, '', `#${targetId}`);
+            });
+        });
 
-                renderSubjects();
+        function handleHashChange() {
+            const hash = window.location.hash.substring(1);
+            if (hash && currentUser) { // Ensure user is authenticated before loading data
+                showSection(hash);
+                if (hash === 'subjects') {
+                    showSubjectList();
+                } else if (hash === 'blog') {
+                    showBlogList();
+                } else if (hash === 'past-papers-section') {
+                    showPastPapersList();
+                }
+            } else if (!hash && currentUser) {
+                showSection('home'); // Default to home if no hash
             }
+        }
 
-            function renderSubjects() {
-                subjectsListDiv.innerHTML = '';
-                allSubjectsData = loadAllSubjectsData(); // Load fresh data
+        window.addEventListener('hashchange', handleHashChange);
+        // Initial call is now handled by onAuthStateChanged
 
-                const subjectNames = Object.keys(allSubjectsData).sort(); // Sort subjects alphabetically
+        // --- Subject Management Functions (Firebase Firestore) ---
 
-                if (subjectNames.length === 0) {
+        async function showSubjectList() {
+            subjectsListView.classList.remove('hidden');
+            subjectDetailView.classList.add('hidden');
+            quizSection.classList.add('hidden');
+            addEditBlogSection.classList.add('hidden');
+            blogPostsDisplay.classList.add('hidden');
+            pastPapersListView.classList.add('hidden');
+            pastPaperDetailView.classList.add('hidden');
+            
+            await renderSubjects();
+        }
+
+        async function renderSubjects() {
+            subjectsListDiv.innerHTML = '';
+            showLoading();
+            try {
+                const querySnapshot = await getDocs(collection(db, "subjects"));
+                allSubjectsData = {}; // Reset local data
+                if (querySnapshot.empty) {
                     subjectsListDiv.innerHTML = '<p class="text-center text-gray-500 col-span-full">No subjects added yet. Add your first subject above!</p>';
-                }
-
-                subjectNames.forEach(subjectName => {
-                    const mcqCount = allSubjectsData[subjectName] ? allSubjectsData[subjectName].length : 0;
-                    const subjectCard = `
-                        <div class="bg-blue-100 p-6 rounded-lg shadow-md flex flex-col justify-between items-center text-center transform hover:scale-105 transition duration-300 ease-in-out cursor-pointer subject-card" data-subject="${subjectName}">
-                            <h3 class="text-2xl font-bold text-blue-800 mb-2">${subjectName}</h3>
-                            <p class="text-gray-700 mb-4">${mcqCount} MCQs</p>
-                            <div class="flex space-x-2">
-                                <button class="view-subject-btn bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded-full">View MCQs</button>
-                                <button class="delete-subject-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-full" data-subject="${subjectName}">Delete Subject</button>
-                            </div>
-                        </div>
-                    `;
-                    subjectsListDiv.insertAdjacentHTML('beforeend', subjectCard);
-                });
-            }
-
-            // Handle adding a new subject
-            addSubjectForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                const newSubjectName = newSubjectNameInput.value.trim();
-
-                if (newSubjectName) {
-                    if (allSubjectsData[newSubjectName]) {
-                        showMessage(`Subject "${newSubjectName}" already exists!`, 'info');
-                    } else {
-                        allSubjectsData[newSubjectName] = []; // Initialize with an empty array of MCQs
-                        saveAllSubjectsData();
-                        renderSubjects(); // Re-render the subject list
-                        newSubjectNameInput.value = ''; // Clear input
-                        showMessage(`Subject "${newSubjectName}" added successfully!`);
-                    }
                 } else {
-                    showMessage("Please enter a subject name.", 'info');
-                }
-            });
+                    querySnapshot.forEach((doc) => {
+                        allSubjectsData[doc.id] = { ...doc.data(), id: doc.id }; // Store doc ID as part of data
+                    });
+                    
+                    const sortedSubjects = Object.values(allSubjectsData).sort((a, b) => a.name.localeCompare(b.name));
 
-            // Event delegation for subject cards (view and delete)
-            subjectsListDiv.addEventListener('click', function(event) {
-                const target = event.target;
-                const subjectCard = target.closest('.subject-card');
+                    for (const subject of sortedSubjects) {
+                        const mcqCountSnapshot = await getDocs(collection(db, "subjects", subject.id, "mcqs"));
+                        const mcqCount = mcqCountSnapshot.size;
 
-                if (subjectCard) {
-                    const subjectName = subjectCard.dataset.subject;
-
-                    if (target.classList.contains('view-subject-btn') || target === subjectCard) {
-                        // View MCQs for this subject
-                        showSubjectDetail(subjectName);
-                    } else if (target.classList.contains('delete-subject-btn')) {
-                        // Delete this subject
-                        showMessage(`Are you sure you want to delete the subject "${subjectName}" and all its MCQs?`, 'confirm', (confirmed) => {
-                            if (confirmed) {
-                                delete allSubjectsData[subjectName];
-                                saveAllSubjectsData();
-                                renderSubjects(); // Re-render the subject list
-                                showMessage(`Subject "${subjectName}" and its MCQs deleted.`);
-                            }
-                        });
+                        const subjectCard = `
+                            <div class="bg-blue-100 p-6 rounded-lg shadow-md flex flex-col justify-between items-center text-center transform hover:scale-105 transition duration-300 ease-in-out cursor-pointer subject-card" data-subject-id="${subject.id}" data-subject-name="${subject.name}">
+                                <h3 class="text-2xl font-bold text-blue-800 mb-2">${subject.name}</h3>
+                                <p class="text-gray-700 mb-4">${mcqCount} MCQs</p>
+                                <div class="flex space-x-2">
+                                    <button class="view-subject-btn bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded-full">View MCQs</button>
+                                    <button class="delete-subject-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-full" data-subject-id="${subject.id}">Delete Subject</button>
+                                </div>
+                            </div>
+                        `;
+                        subjectsListDiv.insertAdjacentHTML('beforeend', subjectCard);
                     }
                 }
-            });
+            } catch (e) {
+                console.error("Error fetching subjects:", e);
+                showMessage("Error loading subjects.", 'error');
+            } finally {
+                hideLoading();
+            }
+        }
 
-            function showSubjectDetail(subjectName) {
-                currentSelectedSubject = subjectName;
-                currentSubjectTitle.textContent = `MCQs for ${subjectName}`;
+        addSubjectForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const newSubjectName = newSubjectNameInput.value.trim();
 
-                subjectsListView.classList.add('hidden');
-                subjectDetailView.classList.remove('hidden');
-                quizSection.classList.add('hidden');
-                addEditBlogSection.classList.add('hidden'); 
-                blogPostsDisplay.classList.add('hidden');
-                pastPapersListView.classList.add('hidden'); // Hide past papers elements
-                pastPaperDetailView.classList.add('hidden'); // Hide past papers elements
-
-                renderMcqsForSubject();
-                resetMcqForm(); // Ensure form is in add mode for the new subject
+            if (!newSubjectName) {
+                showMessage("Please enter a subject name.", 'info');
+                return;
             }
 
-            backToSubjectsBtn.addEventListener('click', showSubjectList);
+            showLoading();
+            try {
+                // Check if subject already exists
+                const q = query(collection(db, "subjects"), where("name", "==", newSubjectName));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    showMessage(`Subject "${newSubjectName}" already exists!`, 'info');
+                    hideLoading();
+                    return;
+                }
 
-            // --- MCQ Management Functions (adapted for subjects) ---
+                await addDoc(collection(db, "subjects"), {
+                    name: newSubjectName,
+                    createdAt: new Date()
+                });
+                newSubjectNameInput.value = '';
+                showMessage(`Subject "${newSubjectName}" added successfully!`);
+                await renderSubjects();
+            } catch (e) {
+                console.error("Error adding subject:", e);
+                showMessage("Error adding subject.", 'error');
+            } finally {
+                hideLoading();
+            }
+        });
 
-            function renderMcqsForSubject() {
-                mcqsDisplay.innerHTML = '';
-                const mcqsForCurrentSubject = allSubjectsData[currentSelectedSubject] || [];
+        subjectsListDiv.addEventListener('click', function(event) {
+            const target = event.target;
+            const subjectCard = target.closest('.subject-card');
+
+            if (subjectCard) {
+                const subjectId = subjectCard.dataset.subjectId;
+                const subjectName = subjectCard.dataset.subjectName;
+
+                if (target.classList.contains('view-subject-btn') || target === subjectCard) {
+                    showSubjectDetail(subjectId, subjectName);
+                } else if (target.classList.contains('delete-subject-btn')) {
+                    showMessage(`Are you sure you want to delete the subject "${subjectName}" and all its MCQs?`, 'confirm', async (confirmed) => {
+                        if (confirmed) {
+                            showLoading();
+                            try {
+                                // Delete all MCQs in the subcollection first
+                                const mcqsSnapshot = await getDocs(collection(db, "subjects", subjectId, "mcqs"));
+                                const deleteMcqPromises = mcqsSnapshot.docs.map(mcqDoc => deleteDoc(doc(db, "subjects", subjectId, "mcqs", mcqDoc.id)));
+                                await Promise.all(deleteMcqPromises);
+
+                                // Then delete the subject document
+                                await deleteDoc(doc(db, "subjects", subjectId));
+                                showMessage(`Subject "${subjectName}" and its MCQs deleted.`);
+                                await renderSubjects();
+                            } catch (e) {
+                                console.error("Error deleting subject:", e);
+                                showMessage("Error deleting subject.", 'error');
+                            } finally {
+                                hideLoading();
+                            }
+                        }
+                    });
+                }
+            }
+        });
+
+        async function showSubjectDetail(subjectId, subjectName) {
+            currentSelectedSubject = subjectId; // Store the document ID
+            currentSubjectTitle.textContent = `MCQs for ${subjectName}`;
+
+            subjectsListView.classList.add('hidden');
+            subjectDetailView.classList.remove('hidden');
+            quizSection.classList.add('hidden');
+            addEditBlogSection.classList.add('hidden');
+            blogPostsDisplay.classList.add('hidden');
+            pastPapersListView.classList.add('hidden');
+            pastPaperDetailView.classList.add('hidden');
+
+            await renderMcqsForSubject();
+            resetMcqForm();
+        }
+
+        backToSubjectsBtn.addEventListener('click', showSubjectList);
+
+        // --- MCQ Management Functions (Firebase Firestore) ---
+
+        async function renderMcqsForSubject() {
+            mcqsDisplay.innerHTML = '';
+            showLoading();
+            try {
+                const mcqsSnapshot = await getDocs(collection(db, "subjects", currentSelectedSubject, "mcqs"));
+                const mcqsForCurrentSubject = [];
+                mcqsSnapshot.forEach(doc => {
+                    mcqsForCurrentSubject.push({ id: doc.id, ...doc.data() });
+                });
 
                 if (mcqsForCurrentSubject.length === 0) {
-                    mcqsDisplay.innerHTML = `<p class="text-center text-gray-500 col-span-full">No MCQs added for ${currentSelectedSubject} yet. Add one above!</p>`;
+                    mcqsDisplay.innerHTML = `<p class="text-center text-gray-500 col-span-full">No MCQs added for this subject yet. Add one above!</p>`;
                     startQuizBtn.classList.add('hidden');
                 } else {
+                    mcqsForCurrentSubject.sort((a, b) => a.question.localeCompare(b.question)); // Sort by question for consistent display
                     mcqsForCurrentSubject.forEach((mcq) => {
                         const mcqCard = `
                             <div class="bg-blue-50 p-6 rounded-lg shadow-md transform hover:scale-105 transition duration-300 ease-in-out flex flex-col justify-between">
@@ -798,85 +828,86 @@
                     });
                     startQuizBtn.classList.remove('hidden');
                 }
+            } catch (e) {
+                console.error("Error fetching MCQs:", e);
+                showMessage("Error loading MCQs.", 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function resetMcqForm() {
+            addMcqForm.reset();
+            document.getElementById('mcq-question').value = '';
+            document.getElementById('mcq-options').value = '';
+            document.getElementById('mcq-answer').value = '';
+            mcqFormTitle.textContent = "Add a New MCQ";
+            submitMcqBtn.textContent = "Add MCQ";
+            cancelEditBtn.classList.add('hidden');
+            editingMcqId = null;
+        }
+
+        addMcqForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            if (!currentSelectedSubject) {
+                showMessage("Please select a subject first to add an MCQ.", 'info');
+                return;
             }
 
-            // Reset MCQ form to "Add New MCQ" state
-            function resetMcqForm() {
-                addMcqForm.reset();
-                document.getElementById('mcq-question').value = '';
-                document.getElementById('mcq-options').value = '';
-                document.getElementById('mcq-answer').value = '';
-                mcqFormTitle.textContent = "Add a New MCQ";
-                submitMcqBtn.textContent = "Add MCQ";
-                cancelEditBtn.classList.add('hidden');
-                editingMcqId = null;
+            const question = document.getElementById('mcq-question').value.trim();
+            const optionsInput = document.getElementById('mcq-options').value.trim();
+            const answer = document.getElementById('mcq-answer').value.trim();
+
+            if (!question || !optionsInput || !answer) {
+                showMessage("Please fill in all fields to add/update an MCQ.");
+                return;
             }
 
-            // Handle MCQ form submission (Add/Update)
-            addMcqForm.addEventListener('submit', function(event) {
-                event.preventDefault();
+            const options = optionsInput.split(',').map(opt => opt.trim());
+            if (!options.includes(answer)) {
+                showMessage("The correct answer must be one of the provided options.", 'info');
+                return;
+            }
 
-                if (!currentSelectedSubject) {
-                    showMessage("Please select a subject first to add an MCQ.", 'info');
-                    return;
-                }
-
-                const question = document.getElementById('mcq-question').value.trim();
-                const optionsInput = document.getElementById('mcq-options').value.trim();
-                const answer = document.getElementById('mcq-answer').value.trim();
-
-                if (!question || !optionsInput || !answer) {
-                    showMessage("Please fill in all fields to add/update an MCQ.");
-                    return;
-                }
-
-                const options = optionsInput.split(',').map(opt => opt.trim());
-                if (!options.includes(answer)) {
-                    showMessage("The correct answer must be one of the provided options.", 'info');
-                    return;
-                }
-
+            showLoading();
+            try {
                 if (editingMcqId) {
-                    // Update existing MCQ
-                    const mcqs = allSubjectsData[currentSelectedSubject];
-                    const mcqIndex = mcqs.findIndex(mcq => mcq.id === editingMcqId);
-                    if (mcqIndex !== -1) {
-                        mcqs[mcqIndex] = {
-                            id: editingMcqId, // Keep existing ID
-                            question: question,
-                            options: options,
-                            answer: answer
-                        };
-                        showMessage("MCQ updated successfully!");
-                    }
-                } else {
-                    // Add new MCQ
-                    const newMcq = {
-                        id: Date.now().toString(), // Simple unique ID using timestamp
+                    await updateDoc(doc(db, "subjects", currentSelectedSubject, "mcqs", editingMcqId), {
                         question: question,
                         options: options,
                         answer: answer
-                    };
-                    if (!allSubjectsData[currentSelectedSubject]) {
-                        allSubjectsData[currentSelectedSubject] = [];
-                    }
-                    allSubjectsData[currentSelectedSubject].push(newMcq);
+                    });
+                    showMessage("MCQ updated successfully!");
+                } else {
+                    await addDoc(collection(db, "subjects", currentSelectedSubject, "mcqs"), {
+                        question: question,
+                        options: options,
+                        answer: answer,
+                        createdAt: new Date()
+                    });
                     showMessage("MCQ added successfully!");
                 }
-                saveAllSubjectsData(); // Save changes
-                renderMcqsForSubject(); // Re-render display for the current subject
+                await renderMcqsForSubject();
                 resetMcqForm();
-            });
+            } catch (e) {
+                console.error("Error saving MCQ:", e);
+                showMessage("Error saving MCQ.", 'error');
+            } finally {
+                hideLoading();
+            }
+        });
 
-            // Handle Cancel Edit button click
-            cancelEditBtn.addEventListener('click', resetMcqForm);
+        cancelEditBtn.addEventListener('click', resetMcqForm);
 
-            // Event delegation for Edit and Delete MCQ buttons
-            mcqsDisplay.addEventListener('click', function(event) {
-                if (event.target.classList.contains('edit-mcq-btn')) {
-                    const mcqId = event.target.dataset.id;
-                    const mcqToEdit = (allSubjectsData[currentSelectedSubject] || []).find(mcq => mcq.id === mcqId);
-                    if (mcqToEdit) {
+        mcqsDisplay.addEventListener('click', async function(event) {
+            if (event.target.classList.contains('edit-mcq-btn')) {
+                const mcqId = event.target.dataset.id;
+                showLoading();
+                try {
+                    const mcqDoc = await getDoc(doc(db, "subjects", currentSelectedSubject, "mcqs", mcqId));
+                    if (mcqDoc.exists()) {
+                        const mcqToEdit = mcqDoc.data();
                         document.getElementById('mcq-question').value = mcqToEdit.question;
                         document.getElementById('mcq-options').value = mcqToEdit.options.join(', ');
                         document.getElementById('mcq-answer').value = mcqToEdit.answer;
@@ -887,242 +918,267 @@
                         editingMcqId = mcqId;
 
                         addEditMcqSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        showMessage("MCQ not found.", 'error');
                     }
-                } else if (event.target.classList.contains('delete-mcq-btn')) {
-                    const mcqIdToDelete = event.target.dataset.id;
-                    showMessage("Are you sure you want to delete this MCQ?", 'confirm', (confirmed) => {
-                        if (confirmed) {
-                            if (allSubjectsData[currentSelectedSubject]) {
-                                allSubjectsData[currentSelectedSubject] = allSubjectsData[currentSelectedSubject].filter(mcq => mcq.id !== mcqIdToDelete);
-                                saveAllSubjectsData();
-                                renderMcqsForSubject();
-                                showMessage("MCQ deleted successfully!");
-                                resetMcqForm(); // Clear form if deleted item was being edited
-                            }
+                } catch (e) {
+                    console.error("Error fetching MCQ for edit:", e);
+                    showMessage("Error loading MCQ for edit.", 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else if (event.target.classList.contains('delete-mcq-btn')) {
+                const mcqIdToDelete = event.target.dataset.id;
+                showMessage("Are you sure you want to delete this MCQ?", 'confirm', async (confirmed) => {
+                    if (confirmed) {
+                        showLoading();
+                        try {
+                            await deleteDoc(doc(db, "subjects", currentSelectedSubject, "mcqs", mcqIdToDelete));
+                            showMessage("MCQ deleted successfully!");
+                            await renderMcqsForSubject();
+                            resetMcqForm();
+                        } catch (e) {
+                            console.error("Error deleting MCQ:", e);
+                            showMessage("Error deleting MCQ.", 'error');
+                        } finally {
+                            hideLoading();
                         }
-                    });
-                }
-            });
+                    }
+                });
+            }
+        });
 
-            // --- Quiz Functionality ---
-            startQuizBtn.addEventListener('click', startQuiz);
-            quizBackToSubjectBtn.addEventListener('click', () => showSubjectDetail(currentSelectedSubject)); // Back from quiz to subject detail
+        // --- Quiz Functionality ---
+        startQuizBtn.addEventListener('click', startQuiz);
+        quizBackToSubjectBtn.addEventListener('click', () => showSubjectDetail(currentSelectedSubject, allSubjectsData[currentSelectedSubject].name));
 
-            function startQuiz() {
-                if (!currentSelectedSubject) {
-                    showMessage("Please select a subject first to start a quiz.", 'info');
-                    return;
-                }
-                const mcqsForQuiz = allSubjectsData[currentSelectedSubject] || [];
+        async function startQuiz() {
+            if (!currentSelectedSubject) {
+                showMessage("Please select a subject first to start a quiz.", 'info');
+                return;
+            }
+            showLoading();
+            try {
+                const mcqsSnapshot = await getDocs(collection(db, "subjects", currentSelectedSubject, "mcqs"));
+                const mcqsForQuiz = [];
+                mcqsSnapshot.forEach(doc => {
+                    mcqsForQuiz.push({ id: doc.id, ...doc.data() });
+                });
 
                 if (mcqsForQuiz.length === 0) {
-                    showMessage(`No MCQs available for ${currentSelectedSubject} to start a quiz. Please add some first!`, 'info');
+                    showMessage(`No MCQs available for this subject to start a quiz. Please add some first!`, 'info');
                     return;
                 }
 
-                currentQuizMcqs = shuffleArray([...mcqsForQuiz]).slice(0, Math.min(10, mcqsForQuiz.length)); // Take max 10 for quiz
+                currentQuizMcqs = shuffleArray([...mcqsForQuiz]).slice(0, Math.min(10, mcqsForQuiz.length));
                 currentQuestionIndex = 0;
                 quizScore = 0;
                 quizFeedback.textContent = '';
                 quizResult.classList.add('hidden');
-                quizBackToSubjectBtn.classList.add('hidden'); // Hide until quiz finishes
+                quizBackToSubjectBtn.classList.add('hidden');
 
                 subjectsListView.classList.add('hidden');
                 subjectDetailView.classList.add('hidden');
                 quizSection.classList.remove('hidden');
-                addEditBlogSection.classList.add('hidden'); 
+                addEditBlogSection.classList.add('hidden');
                 blogPostsDisplay.classList.add('hidden');
-                pastPapersListView.classList.add('hidden'); // Hide past papers elements
-                pastPaperDetailView.classList.add('hidden'); // Hide past papers elements
+                pastPapersListView.classList.add('hidden');
+                pastPaperDetailView.classList.add('hidden');
 
                 displayQuestion();
+            } catch (e) {
+                console.error("Error starting quiz:", e);
+                showMessage("Error loading quiz questions.", 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        nextQuestionBtn.addEventListener('click', () => navigateQuiz(1));
+        prevQuestionBtn.addEventListener('click', () => navigateQuiz(-1));
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= currentQuizMcqs.length) {
+                endQuiz();
+                return;
             }
 
-            nextQuestionBtn.addEventListener('click', () => navigateQuiz(1));
-            prevQuestionBtn.addEventListener('click', () => navigateQuiz(-1));
+            const currentMcq = currentQuizMcqs[currentQuestionIndex];
+            quizQuestion.textContent = `Q${currentQuestionIndex + 1}: ${currentMcq.question}`;
+            quizOptions.innerHTML = '';
+            quizFeedback.textContent = '';
 
-            function displayQuestion() {
-                if (currentQuestionIndex >= currentQuizMcqs.length) {
-                    endQuiz();
-                    return;
-                }
+            const orderedOptions = currentMcq.options;
 
-                const currentMcq = currentQuizMcqs[currentQuestionIndex];
-                quizQuestion.textContent = `Q${currentQuestionIndex + 1}: ${currentMcq.question}`;
-                quizOptions.innerHTML = '';
-                quizFeedback.textContent = '';
-
-                // Options are now rendered in their original order
-                const orderedOptions = currentMcq.options;
-
-                orderedOptions.forEach(option => {
-                    const listItem = document.createElement('li');
-                    const button = document.createElement('button');
-                    button.textContent = option;
-                    button.classList.add('option-button');
-                    button.dataset.option = option;
-                    button.addEventListener('click', () => selectOption(button, currentMcq.answer));
-                    listItem.appendChild(button);
-                    quizOptions.appendChild(listItem);
-                });
-
-                prevQuestionBtn.disabled = currentQuestionIndex === 0;
-                nextQuestionBtn.textContent = currentQuestionIndex === currentQuizMcqs.length - 1 ? 'Finish Quiz' : 'Next';
-            }
-
-            function selectOption(selectedButton, correctAnswer) {
-                Array.from(quizOptions.querySelectorAll('.option-button')).forEach(button => button.disabled = true);
-
-                const selectedOption = selectedButton.dataset.option;
-                if (selectedOption === correctAnswer) {
-                    selectedButton.classList.add('correct');
-                    quizFeedback.textContent = 'Correct!';
-                    quizFeedback.classList.remove('text-red-600');
-                    quizFeedback.classList.add('text-green-600');
-                    quizScore++;
-                } else {
-                    selectedButton.classList.add('incorrect');
-                    quizFeedback.textContent = `Incorrect. The correct answer was: ${correctAnswer}`;
-                    quizFeedback.classList.remove('text-green-600');
-                    quizFeedback.classList.add('text-red-600');
-                    Array.from(quizOptions.querySelectorAll('.option-button')).forEach(button => {
-                        if (button.dataset.option === correctAnswer) {
-                            button.classList.add('correct');
-                        }
-                    });
-                }
-            }
-
-            function navigateQuiz(direction) {
-                if (direction === 1) {
-                    currentQuestionIndex++;
-                } else if (direction === -1) {
-                    currentQuestionIndex--;
-                }
-                displayQuestion();
-            }
-
-            function endQuiz() {
-                quizQuestion.textContent = '';
-                quizOptions.innerHTML = '';
-                quizFeedback.textContent = '';
-                prevQuestionBtn.classList.add('hidden');
-                nextQuestionBtn.classList.add('hidden');
-
-                quizResult.textContent = `Quiz Finished! Your Score: ${quizScore} / ${currentQuizMcqs.length}`;
-                quizResult.classList.remove('hidden');
-                quizBackToSubjectBtn.classList.remove('hidden'); // Show button to go back to subject MCQs
-            }
-
-            function shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
-            }
-
-            // --- Blog Management Functions ---
-
-            function showBlogList() {
-                subjectsListView.classList.add('hidden'); 
-                subjectDetailView.classList.add('hidden'); 
-                quizSection.classList.add('hidden'); 
-                addEditBlogSection.classList.remove('hidden'); 
-                blogPostsDisplay.classList.remove('hidden');
-                pastPapersListView.classList.add('hidden'); // Hide past papers elements
-                pastPaperDetailView.classList.add('hidden'); // Hide past papers elements
-
-                renderBlogPosts();
-                resetBlogForm(); // Ensure form is in add mode
-            }
-
-            function renderBlogPosts() {
-                blogPostsDisplay.innerHTML = '';
-                allBlogPosts = loadBlogPostsFromLocalStorage();
-
-                if (allBlogPosts.length === 0) {
-                    blogPostsDisplay.innerHTML = '<p class="text-center text-gray-500 col-span-full">No blog posts yet. Be the first to add one!</p>';
-                    return;
-                }
-
-                // Sort blog posts by date, newest first (assuming Date.now() for ID)
-                allBlogPosts.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-
-                allBlogPosts.forEach(post => {
-                    const blogCard = `
-                        <div class="bg-blue-50 rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition duration-300 ease-in-out">
-                            <div class="p-6">
-                                <h3 class="text-2xl font-semibold text-blue-700 mb-2">${post.title}</h3>
-                                <p class="text-gray-600 text-sm mb-4">${post.content.substring(0, 150)}${post.content.length > 150 ? '...' : ''}</p>
-                                <div class="flex justify-end space-x-2">
-                                    <button data-id="${post.id}" class="edit-blog-btn bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-bold py-2 px-4 rounded-full">Edit</button>
-                                    <button data-id="${post.id}" class="delete-blog-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-full">Delete</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    blogPostsDisplay.insertAdjacentHTML('beforeend', blogCard);
-                });
-            }
-
-            function resetBlogForm() {
-                addBlogForm.reset();
-                blogTitleInput.value = '';
-                blogContentInput.value = '';
-                blogFormTitle.textContent = "Add a New Blog Post";
-                submitBlogBtn.textContent = "Add Blog Post";
-                cancelBlogEditBtn.classList.add('hidden');
-                editingBlogPostId = null;
-            }
-
-            // Handle blog form submission (Add/Update)
-            addBlogForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-
-                const title = blogTitleInput.value.trim();
-                const content = blogContentInput.value.trim();
-
-                if (!title || !content) {
-                    showMessage("Please fill in both the title and content for the blog post.", 'info');
-                    return;
-                }
-
-                if (editingBlogPostId) {
-                    // Update existing blog post
-                    const postIndex = allBlogPosts.findIndex(post => post.id === editingBlogPostId);
-                    if (postIndex !== -1) {
-                        allBlogPosts[postIndex] = {
-                            id: editingBlogPostId,
-                            title: title,
-                            content: content
-                        };
-                        showMessage("Blog post updated successfully!");
-                    }
-                } else {
-                    // Add new blog post
-                    const newPost = {
-                        id: Date.now().toString(), // Simple unique ID using timestamp
-                        title: title,
-                        content: content
-                    };
-                    allBlogPosts.push(newPost);
-                    showMessage("Blog post added successfully!");
-                }
-                saveBlogPostsToLocalStorage();
-                renderBlogPosts();
-                resetBlogForm();
+            orderedOptions.forEach(option => {
+                const listItem = document.createElement('li');
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.dataset.option = option;
+                button.addEventListener('click', () => selectOption(button, currentMcq.answer));
+                listItem.appendChild(button);
+                quizOptions.appendChild(listItem);
             });
 
-            // Handle Cancel Blog Edit button click
-            cancelBlogEditBtn.addEventListener('click', resetBlogForm);
+            prevQuestionBtn.disabled = currentQuestionIndex === 0;
+            nextQuestionBtn.textContent = currentQuestionIndex === currentQuizMcqs.length - 1 ? 'Finish Quiz' : 'Next';
+        }
 
-            // Event delegation for Edit and Delete Blog buttons
-            blogPostsDisplay.addEventListener('click', function(event) {
-                if (event.target.classList.contains('edit-blog-btn')) {
-                    const postId = event.target.dataset.id;
-                    const postToEdit = allBlogPosts.find(post => post.id === postId);
-                    if (postToEdit) {
+        function selectOption(selectedButton, correctAnswer) {
+            Array.from(quizOptions.querySelectorAll('.option-button')).forEach(button => button.disabled = true);
+
+            const selectedOption = selectedButton.dataset.option;
+            if (selectedOption === correctAnswer) {
+                selectedButton.classList.add('correct');
+                quizFeedback.textContent = 'Correct!';
+                quizFeedback.classList.remove('text-red-600');
+                quizFeedback.classList.add('text-green-600');
+                quizScore++;
+            } else {
+                selectedButton.classList.add('incorrect');
+                quizFeedback.textContent = `Incorrect. The correct answer was: ${correctAnswer}`;
+                quizFeedback.classList.remove('text-green-600');
+                quizFeedback.classList.add('text-red-600');
+                Array.from(quizOptions.querySelectorAll('.option-button')).forEach(button => {
+                    if (button.dataset.option === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+        }
+
+        function navigateQuiz(direction) {
+            if (direction === 1) {
+                currentQuestionIndex++;
+            } else if (direction === -1) {
+                currentQuestionIndex--;
+            }
+            displayQuestion();
+        }
+
+        function endQuiz() {
+            quizQuestion.textContent = '';
+            quizOptions.innerHTML = '';
+            quizFeedback.textContent = '';
+            prevQuestionBtn.classList.add('hidden');
+            nextQuestionBtn.classList.add('hidden');
+
+            quizResult.textContent = `Quiz Finished! Your Score: ${quizScore} / ${currentQuizMcqs.length}`;
+            quizResult.classList.remove('hidden');
+            quizBackToSubjectBtn.classList.remove('hidden');
+        }
+
+        // --- Blog Management Functions (Firebase Firestore) ---
+
+        async function showBlogList() {
+            subjectsListView.classList.add('hidden');
+            subjectDetailView.classList.add('hidden');
+            quizSection.classList.add('hidden');
+            addEditBlogSection.classList.remove('hidden');
+            blogPostsDisplay.classList.remove('hidden');
+            pastPapersListView.classList.add('hidden');
+            pastPaperDetailView.classList.add('hidden');
+
+            await renderBlogPosts();
+            resetBlogForm();
+        }
+
+        async function renderBlogPosts() {
+            blogPostsDisplay.innerHTML = '';
+            showLoading();
+            try {
+                const querySnapshot = await getDocs(query(collection(db, "blogPosts"), orderBy("createdAt", "desc")));
+                allBlogPosts = [];
+                if (querySnapshot.empty) {
+                    blogPostsDisplay.innerHTML = '<p class="text-center text-gray-500 col-span-full">No blog posts yet. Be the first to add one!</p>';
+                } else {
+                    querySnapshot.forEach(doc => {
+                        allBlogPosts.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    allBlogPosts.forEach(post => {
+                        const blogCard = `
+                            <div class="bg-blue-50 rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition duration-300 ease-in-out">
+                                <div class="p-6">
+                                    <h3 class="text-2xl font-semibold text-blue-700 mb-2">${post.title}</h3>
+                                    <p class="text-gray-600 text-sm mb-4">${post.content.substring(0, 150)}${post.content.length > 150 ? '...' : ''}</p>
+                                    <div class="flex justify-end space-x-2">
+                                        <button data-id="${post.id}" class="edit-blog-btn bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-bold py-2 px-4 rounded-full">Edit</button>
+                                        <button data-id="${post.id}" class="delete-blog-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-full">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        blogPostsDisplay.insertAdjacentHTML('beforeend', blogCard);
+                    });
+                }
+            } catch (e) {
+                console.error("Error fetching blog posts:", e);
+                showMessage("Error loading blog posts.", 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function resetBlogForm() {
+            addBlogForm.reset();
+            blogTitleInput.value = '';
+            blogContentInput.value = '';
+            blogFormTitle.textContent = "Add a New Blog Post";
+            submitBlogBtn.textContent = "Add Blog Post";
+            cancelBlogEditBtn.classList.add('hidden');
+            editingBlogPostId = null;
+        }
+
+        addBlogForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const title = blogTitleInput.value.trim();
+            const content = blogContentInput.value.trim();
+
+            if (!title || !content) {
+                showMessage("Please fill in both the title and content for the blog post.", 'info');
+                return;
+            }
+
+            showLoading();
+            try {
+                if (editingBlogPostId) {
+                    await updateDoc(doc(db, "blogPosts", editingBlogPostId), {
+                        title: title,
+                        content: content,
+                        updatedAt: new Date()
+                    });
+                    showMessage("Blog post updated successfully!");
+                } else {
+                    await addDoc(collection(db, "blogPosts"), {
+                        title: title,
+                        content: content,
+                        createdAt: new Date()
+                    });
+                    showMessage("Blog post added successfully!");
+                }
+                await renderBlogPosts();
+                resetBlogForm();
+            } catch (e) {
+                console.error("Error saving blog post:", e);
+                showMessage("Error saving blog post.", 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        cancelBlogEditBtn.addEventListener('click', resetBlogForm);
+
+        blogPostsDisplay.addEventListener('click', async function(event) {
+            if (event.target.classList.contains('edit-blog-btn')) {
+                const postId = event.target.dataset.id;
+                showLoading();
+                try {
+                    const postDoc = await getDoc(doc(db, "blogPosts", postId));
+                    if (postDoc.exists()) {
+                        const postToEdit = postDoc.data();
                         blogTitleInput.value = postToEdit.title;
                         blogContentInput.value = postToEdit.content;
 
@@ -1132,142 +1188,205 @@
                         editingBlogPostId = postId;
 
                         addEditBlogSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        showMessage("Blog post not found.", 'error');
                     }
-                } else if (event.target.classList.contains('delete-blog-btn')) {
-                    const postIdToDelete = event.target.dataset.id;
-                    showMessage("Are you sure you want to delete this blog post?", 'confirm', (confirmed) => {
-                        if (confirmed) {
-                            allBlogPosts = allBlogPosts.filter(post => post.id !== postIdToDelete);
-                            saveBlogPostsToLocalStorage();
-                            renderBlogPosts();
+                } catch (e) {
+                    console.error("Error fetching blog post for edit:", e);
+                    showMessage("Error loading blog post for edit.", 'error');
+                } finally {
+                    hideLoading();
+                }
+            } else if (event.target.classList.contains('delete-blog-btn')) {
+                const postIdToDelete = event.target.dataset.id;
+                showMessage("Are you sure you want to delete this blog post?", 'confirm', async (confirmed) => {
+                    if (confirmed) {
+                        showLoading();
+                        try {
+                            await deleteDoc(doc(db, "blogPosts", postIdToDelete));
                             showMessage("Blog post deleted successfully!");
-                            resetBlogForm(); // Clear form if deleted item was being edited
+                            await renderBlogPosts();
+                            resetBlogForm();
+                        } catch (e) {
+                            console.error("Error deleting blog post:", e);
+                            showMessage("Error deleting blog post.", 'error');
+                        } finally {
+                            hideLoading();
+                        }
+                    }
+                });
+            }
+        });
+
+        // --- Past Papers Management Functions (Firebase Firestore & Storage) ---
+
+        async function showPastPapersList() {
+            pastPapersListView.classList.remove('hidden');
+            pastPaperDetailView.classList.add('hidden');
+            subjectsListView.classList.add('hidden');
+            subjectDetailView.classList.add('hidden');
+            quizSection.classList.add('hidden');
+            addEditBlogSection.classList.add('hidden');
+            blogPostsDisplay.classList.add('hidden');
+
+            await renderPastPaperCategories();
+            resetPastPaperCategoryForm();
+        }
+
+        async function renderPastPaperCategories() {
+            pastPapersCategoriesDisplay.innerHTML = '';
+            showLoading();
+            try {
+                const querySnapshot = await getDocs(query(collection(db, "pastPaperCategories"), orderBy("name")));
+                allPastPapersData = [];
+                if (querySnapshot.empty) {
+                    pastPapersCategoriesDisplay.innerHTML = '<p class="text-center text-gray-500 col-span-full">No past paper categories added yet. Add your first one above!</p>';
+                } else {
+                    querySnapshot.forEach(doc => {
+                        allPastPapersData.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    for (const category of allPastPapersData) {
+                        const itemsSnapshot = await getDocs(collection(db, "pastPaperCategories", category.id, "items"));
+                        const itemCount = itemsSnapshot.size;
+                        const categoryCard = `
+                            <div class="bg-green-50 p-6 rounded-lg shadow-md text-center transform hover:scale-105 transition duration-300 ease-in-out cursor-pointer past-paper-category-card" data-id="${category.id}" data-name="${category.name}">
+                                <h3 class="text-2xl font-semibold text-green-700 mb-2">${category.name}</h3>
+                                <p class="text-gray-600">${itemCount} Items</p>
+                                <div class="mt-4 flex justify-center space-x-2">
+                                    <button class="view-past-paper-category-btn bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-full">View Items</button>
+                                    <button class="delete-past-paper-category-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-full" data-id="${category.id}">Delete</button>
+                                </div>
+                            </div>
+                        `;
+                        pastPapersCategoriesDisplay.insertAdjacentHTML('beforeend', categoryCard);
+                    }
+                }
+            } catch (e) {
+                console.error("Error fetching past paper categories:", e);
+                showMessage("Error loading past paper categories.", 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function resetPastPaperCategoryForm() {
+            addPastPaperCategoryForm.reset();
+            newPastPaperCategoryNameInput.value = '';
+        }
+
+        addPastPaperCategoryForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const categoryName = newPastPaperCategoryNameInput.value.trim();
+
+            if (!categoryName) {
+                showMessage("Please enter a category name.", 'info');
+                return;
+            }
+
+            showLoading();
+            try {
+                const q = query(collection(db, "pastPaperCategories"), where("name", "==", categoryName));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    showMessage(`Category "${categoryName}" already exists!`, 'info');
+                    hideLoading();
+                    return;
+                }
+
+                await addDoc(collection(db, "pastPaperCategories"), {
+                    name: categoryName,
+                    createdAt: new Date()
+                });
+                newPastPaperCategoryNameInput.value = '';
+                showMessage(`Category "${categoryName}" added successfully!`);
+                await renderPastPaperCategories();
+            } catch (e) {
+                console.error("Error adding past paper category:", e);
+                showMessage("Error adding past paper category.", 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        pastPapersCategoriesDisplay.addEventListener('click', function(event) {
+            const target = event.target;
+            const categoryCard = target.closest('.past-paper-category-card');
+
+            if (categoryCard) {
+                const categoryId = categoryCard.dataset.id;
+                const categoryName = categoryCard.dataset.name;
+
+                if (target.classList.contains('view-past-paper-category-btn') || target === categoryCard) {
+                    showPastPaperDetail(categoryId, categoryName);
+                } else if (target.classList.contains('delete-past-paper-category-btn')) {
+                    showMessage(`Are you sure you want to delete the category "${categoryName}" and all its items (including uploaded files)? This cannot be undone.`, 'confirm', async (confirmed) => {
+                        if (confirmed) {
+                            showLoading();
+                            try {
+                                // Delete all items (files from Storage and docs from Firestore) in the subcollection first
+                                const itemsSnapshot = await getDocs(collection(db, "pastPaperCategories", categoryId, "items"));
+                                const deleteItemPromises = itemsSnapshot.docs.map(async itemDoc => {
+                                    const itemData = itemDoc.data();
+                                    if (itemData.storagePath) { // If it was an uploaded file
+                                        const fileRef = ref(storage, itemData.storagePath);
+                                        await deleteObject(fileRef).catch(e => console.warn("Error deleting file from Storage:", e.message)); // Log warning, don't block
+                                    }
+                                    await deleteDoc(doc(db, "pastPaperCategories", categoryId, "items", itemDoc.id));
+                                });
+                                await Promise.all(deleteItemPromises);
+
+                                // Then delete the category document
+                                await deleteDoc(doc(db, "pastPaperCategories", categoryId));
+                                showMessage(`Category "${categoryName}" and all its items deleted.`);
+                                await renderPastPaperCategories();
+                            } catch (e) {
+                                console.error("Error deleting past paper category:", e);
+                                showMessage("Error deleting past paper category.", 'error');
+                            } finally {
+                                hideLoading();
+                            }
                         }
                     });
                 }
-            });
+            }
+        });
 
-            // --- Past Papers Management Functions ---
-
-            function showPastPapersList() {
-                pastPapersListView.classList.remove('hidden');
-                pastPaperDetailView.classList.add('hidden');
-                subjectsListView.classList.add('hidden'); // Hide other sections
-                subjectDetailView.classList.add('hidden');
-                quizSection.classList.add('hidden');
-                addEditBlogSection.classList.add('hidden');
-                blogPostsDisplay.classList.add('hidden');
-
-                renderPastPaperCategories();
-                resetPastPaperCategoryForm(); // Ensure form is in add mode
+        async function showPastPaperDetail(categoryId, categoryName) {
+            currentSelectedPastPaperCategory = allPastPapersData.find(cat => cat.id === categoryId);
+            if (!currentSelectedPastPaperCategory) {
+                showMessage("Past Paper category not found.", 'error');
+                showPastPapersList();
+                return;
             }
 
-            function renderPastPaperCategories() {
-                pastPapersCategoriesDisplay.innerHTML = '';
-                allPastPapersData = loadPastPapersData();
+            currentPastPaperTitle.textContent = `${categoryName} Papers`;
+            pastPapersListView.classList.add('hidden');
+            pastPaperDetailView.classList.remove('hidden');
+            
+            await renderPdfImageItems();
+            resetPdfImageForm();
+        }
 
-                if (allPastPapersData.length === 0) {
-                    pastPapersCategoriesDisplay.innerHTML = '<p class="text-center text-gray-500 col-span-full">No past paper categories added yet. Add your first one above!</p>';
-                    return;
-                }
+        backToPastPapersBtn.addEventListener('click', showPastPapersList);
 
-                allPastPapersData.sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
-
-                allPastPapersData.forEach(category => {
-                    const categoryCard = `
-                        <div class="bg-green-50 p-6 rounded-lg shadow-md text-center transform hover:scale-105 transition duration-300 ease-in-out cursor-pointer past-paper-category-card" data-id="${category.id}" data-name="${category.name}">
-                            <h3 class="text-2xl font-semibold text-green-700 mb-2">${category.name}</h3>
-                            <p class="text-gray-600">${category.items.length} Items</p>
-                            <div class="mt-4 flex justify-center space-x-2">
-                                <button class="view-past-paper-category-btn bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-full">View Items</button>
-                                <button class="delete-past-paper-category-btn bg-red-500 hover:bg-red-600 text-white text-sm font-bold py-2 px-4 rounded-full" data-id="${category.id}">Delete</button>
-                            </div>
-                        </div>
-                    `;
-                    pastPapersCategoriesDisplay.insertAdjacentHTML('beforeend', categoryCard);
+        async function renderPdfImageItems() {
+            pdfImageDisplay.innerHTML = '';
+            showLoading();
+            try {
+                const itemsSnapshot = await getDocs(collection(db, "pastPaperCategories", currentSelectedPastPaperCategory.id, "items"));
+                const itemsForCategory = [];
+                itemsSnapshot.forEach(doc => {
+                    itemsForCategory.push({ id: doc.id, ...doc.data() });
                 });
-            }
 
-            function resetPastPaperCategoryForm() {
-                addPastPaperCategoryForm.reset();
-                newPastPaperCategoryNameInput.value = '';
-            }
-
-            addPastPaperCategoryForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                const categoryName = newPastPaperCategoryNameInput.value.trim();
-
-                if (!categoryName) {
-                    showMessage("Please enter a category name.", 'info');
-                    return;
-                }
-
-                if (allPastPapersData.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase())) {
-                    showMessage(`Category "${categoryName}" already exists!`, 'info');
-                    return;
-                }
-
-                const newCategory = {
-                    id: Date.now().toString(),
-                    name: categoryName,
-                    items: [] // Array to hold PDFs and images
-                };
-                allPastPapersData.push(newCategory);
-                savePastPapersData();
-                renderPastPaperCategories();
-                resetPastPaperCategoryForm();
-                showMessage(`Category "${categoryName}" added successfully!`);
-            });
-
-            pastPapersCategoriesDisplay.addEventListener('click', function(event) {
-                const target = event.target;
-                const categoryCard = target.closest('.past-paper-category-card');
-
-                if (categoryCard) {
-                    const categoryId = categoryCard.dataset.id;
-                    const categoryName = categoryCard.dataset.name;
-
-                    if (target.classList.contains('view-past-paper-category-btn') || target === categoryCard) {
-                        showPastPaperDetail(categoryId, categoryName);
-                    } else if (target.classList.contains('delete-past-paper-category-btn')) {
-                        showMessage(`Are you sure you want to delete the category "${categoryName}" and all its items?`, 'confirm', (confirmed) => {
-                            if (confirmed) {
-                                allPastPapersData = allPastPapersData.filter(cat => cat.id !== categoryId);
-                                savePastPapersData();
-                                renderPastPaperCategories();
-                                showMessage(`Category "${categoryName}" deleted successfully!`);
-                            }
-                        });
-                    }
-                }
-            });
-
-            function showPastPaperDetail(categoryId, categoryName) {
-                currentSelectedPastPaperCategory = allPastPapersData.find(cat => cat.id === categoryId);
-                if (!currentSelectedPastPaperCategory) {
-                    showMessage("Past Paper category not found.", 'error');
-                    showPastPapersList();
-                    return;
-                }
-
-                currentPastPaperTitle.textContent = `${categoryName} Papers`;
-                pastPapersListView.classList.add('hidden');
-                pastPaperDetailView.classList.remove('hidden');
-                
-                renderPdfImageItems();
-                resetPdfImageForm(); // Ensure form is in add mode
-            }
-
-            backToPastPapersBtn.addEventListener('click', showPastPapersList);
-
-            function renderPdfImageItems() {
-                pdfImageDisplay.innerHTML = '';
-                if (!currentSelectedPastPaperCategory || currentSelectedPastPaperCategory.items.length === 0) {
+                if (itemsForCategory.length === 0) {
                     pdfImageDisplay.innerHTML = '<p class="text-center text-gray-500 col-span-full">No PDFs or Images added for this category yet. Add one above!</p>';
                     return;
                 }
 
-                currentSelectedPastPaperCategory.items.forEach(item => {
+                itemsForCategory.sort((a, b) => a.name.localeCompare(b.name)); // Sort by name
+                itemsForCategory.forEach(item => {
                     let contentHtml = '';
                     if (item.type === 'image') {
                         contentHtml = `<img src="${item.url}" alt="${item.name}" class="w-full h-48 object-contain mb-3 rounded-md border border-gray-200">`;
@@ -1294,108 +1413,113 @@
                     `;
                     pdfImageDisplay.insertAdjacentHTML('beforeend', itemCard);
                 });
+            } catch (e) {
+                console.error("Error fetching PDF/Image items:", e);
+                showMessage("Error loading PDF/Image items.", 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function resetPdfImageForm() {
+            addPdfImageForm.reset();
+            pdfImageNameInput.value = '';
+            pdfImageUrlInput.value = '';
+            pdfImageFileInput.value = '';
+            pdfImageTypeSelect.value = '';
+            pdfImageFormTitle.textContent = "Add New PDF or Image";
+            submitPdfImageBtn.textContent = "Add Item";
+            cancelPdfImageEditBtn.classList.add('hidden');
+            editingPdfImageId = null;
+        }
+
+        addPdfImageForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            if (!currentSelectedPastPaperCategory) {
+                showMessage("Please select a Past Paper category first.", 'info');
+                return;
             }
 
-            function resetPdfImageForm() {
-                addPdfImageForm.reset();
-                pdfImageNameInput.value = '';
-                pdfImageUrlInput.value = '';
-                pdfImageFileInput.value = ''; // Clear file input
-                pdfImageTypeSelect.value = '';
-                pdfImageFormTitle.textContent = "Add New PDF or Image";
-                submitPdfImageBtn.textContent = "Add Item";
-                cancelPdfImageEditBtn.classList.add('hidden');
-                editingPdfImageId = null;
+            const name = pdfImageNameInput.value.trim();
+            const externalUrl = pdfImageUrlInput.value.trim();
+            const file = pdfImageFileInput.files[0];
+            const type = pdfImageTypeSelect.value;
+
+            if (!name || (!externalUrl && !file) || !type) {
+                showMessage("Please fill in the Name, and either upload a File or provide an External URL, and select a Type.", 'info');
+                return;
             }
 
-            addPdfImageForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-
-                if (!currentSelectedPastPaperCategory) {
-                    showMessage("Please select a Past Paper category first.", 'info');
-                    return;
-                }
-
-                const name = pdfImageNameInput.value.trim();
-                const externalUrl = pdfImageUrlInput.value.trim();
-                const file = pdfImageFileInput.files[0]; // Get the selected file
-                const type = pdfImageTypeSelect.value;
-
-                if (!name || (!externalUrl && !file) || !type) {
-                    showMessage("Please fill in the Name, and either upload a File or provide an External URL, and select a Type.", 'info');
-                    return;
-                }
-
-                // Determine the URL/data to store
+            showLoading();
+            try {
                 let itemUrl = externalUrl;
+                let storagePath = null; // To store the path in Firebase Storage
+
                 if (file) {
-                    // If a file is uploaded, prioritize it and convert to Data URL
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        itemUrl = e.target.result; // This is the Base64 Data URL
+                    const fileExtension = file.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExtension}`;
+                    storagePath = `past_papers/${currentSelectedPastPaperCategory.id}/${fileName}`;
+                    const storageRef = ref(storage, storagePath);
+                    const uploadTask = uploadBytesResumable(storageRef, file);
 
-                        const newItem = {
-                            id: Date.now().toString(),
-                            name: name,
-                            url: itemUrl, // Store Data URL
-                            type: type
-                        };
-
-                        if (editingPdfImageId) {
-                            const itemIndex = currentSelectedPastPaperCategory.items.findIndex(item => item.id === editingPdfImageId);
-                            if (itemIndex !== -1) {
-                                currentSelectedPastPaperCategory.items[itemIndex] = newItem;
-                                showMessage("Item updated successfully!");
+                    // Wait for upload to complete and get download URL
+                    await new Promise((resolve, reject) => {
+                        uploadTask.on('state_changed',
+                            (snapshot) => {
+                                // Optional: Handle progress updates here
+                                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                console.log('Upload is ' + progress + '% done');
+                            },
+                            (error) => {
+                                console.error("Upload failed:", error);
+                                reject(error);
+                            },
+                            async () => {
+                                itemUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                                resolve();
                             }
-                        } else {
-                            currentSelectedPastPaperCategory.items.push(newItem);
-                            showMessage("Item added successfully!");
-                        }
-                        savePastPapersData();
-                        renderPdfImageItems();
-                        resetPdfImageForm();
-                    };
-                    reader.readAsDataURL(file); // Read file as Base64 Data URL
-                } else {
-                    // If no file, use the external URL
-                    const newItem = {
-                        id: Date.now().toString(),
-                        name: name,
-                        url: externalUrl,
-                        type: type
-                    };
-
-                    if (editingPdfImageId) {
-                        const itemIndex = currentSelectedPastPaperCategory.items.findIndex(item => item.id === editingPdfImageId);
-                        if (itemIndex !== -1) {
-                            currentSelectedPastPaperCategory.items[itemIndex] = newItem;
-                            showMessage("Item updated successfully!");
-                        }
-                    } else {
-                        currentSelectedPastPaperCategory.items.push(newItem);
-                        showMessage("Item added successfully!");
-                    }
-                    savePastPapersData();
-                    renderPdfImageItems();
-                    resetPdfImageForm();
+                        );
+                    });
                 }
-            });
 
-            pdfImageDisplay.addEventListener('click', function(event) {
-                if (event.target.classList.contains('edit-pdf-image-btn')) {
-                    const itemId = event.target.dataset.id;
-                    const itemToEdit = currentSelectedPastPaperCategory.items.find(item => item.id === itemId);
-                    if (itemToEdit) {
+                const itemData = {
+                    name: name,
+                    url: itemUrl,
+                    type: type,
+                    createdAt: new Date()
+                };
+                if (storagePath) {
+                    itemData.storagePath = storagePath; // Save storage path for deletion
+                }
+
+                if (editingPdfImageId) {
+                    await updateDoc(doc(db, "pastPaperCategories", currentSelectedPastPaperCategory.id, "items", editingPdfImageId), itemData);
+                    showMessage("Item updated successfully!");
+                } else {
+                    await addDoc(collection(db, "pastPaperCategories", currentSelectedPastPaperCategory.id, "items"), itemData);
+                    showMessage("Item added successfully!");
+                }
+                await renderPdfImageItems();
+                resetPdfImageForm();
+            } catch (e) {
+                console.error("Error saving PDF/Image item:", e);
+                showMessage("Error saving item. Check file size or URL.", 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        pdfImageDisplay.addEventListener('click', async function(event) {
+            if (event.target.classList.contains('edit-pdf-image-btn')) {
+                const itemId = event.target.dataset.id;
+                showLoading();
+                try {
+                    const itemDoc = await getDoc(doc(db, "pastPaperCategories", currentSelectedPastPaperCategory.id, "items", itemId));
+                    if (itemDoc.exists()) {
+                        const itemToEdit = itemDoc.data();
                         pdfImageNameInput.value = itemToEdit.name;
-                        // For editing, we can't pre-fill file input, so we put the URL in the URL field
-                        // If it's a Data URL (Base64), it will be a very long string.
-                        // User will have to re-upload or provide a new URL if editing an uploaded file.
-                        if (itemToEdit.url.startsWith('data:')) {
-                            pdfImageUrlInput.value = ''; // Clear URL field for uploaded files
-                            showMessage("Note: For uploaded files, you need to re-upload or provide a new external URL when editing.", 'info');
-                        } else {
-                            pdfImageUrlInput.value = itemToEdit.url;
-                        }
+                        pdfImageUrlInput.value = itemToEdit.url; // Pre-fill URL if it's an external one
                         pdfImageFileInput.value = ''; // Clear file input on edit
                         pdfImageTypeSelect.value = itemToEdit.type;
 
@@ -1405,23 +1529,42 @@
                         editingPdfImageId = itemId;
 
                         addEditPdfImageSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        showMessage("Item not found.", 'error');
                     }
-                } else if (event.target.classList.contains('delete-pdf-image-btn')) {
-                    const itemIdToDelete = event.target.dataset.id;
-                    showMessage("Are you sure you want to delete this item?", 'confirm', (confirmed) => {
-                        if (confirmed) {
-                            currentSelectedPastPaperCategory.items = currentSelectedPastPaperCategory.items.filter(item => item.id !== itemIdToDelete);
-                            savePastPapersData();
-                            renderPdfImageItems();
-                            showMessage("Item deleted successfully!");
-                            resetPdfImageForm();
-                        }
-                    });
+                } catch (e) {
+                    console.error("Error fetching item for edit:", e);
+                    showMessage("Error loading item for edit.", 'error');
+                } finally {
+                    hideLoading();
                 }
-            });
-
-            cancelPdfImageEditBtn.addEventListener('click', resetPdfImageForm);
+            } else if (event.target.classList.contains('delete-pdf-image-btn')) {
+                const itemIdToDelete = event.target.dataset.id;
+                showMessage("Are you sure you want to delete this item (and its uploaded file if any)?", 'confirm', async (confirmed) => {
+                    if (confirmed) {
+                        showLoading();
+                        try {
+                            const itemDoc = await getDoc(doc(db, "pastPaperCategories", currentSelectedPastPaperCategory.id, "items", itemIdToDelete));
+                            if (itemDoc.exists() && itemDoc.data().storagePath) {
+                                const fileRef = ref(storage, itemDoc.data().storagePath);
+                                await deleteObject(fileRef).catch(e => console.warn("Error deleting file from Storage:", e.message)); // Log warning, don't block
+                            }
+                            await deleteDoc(doc(db, "pastPaperCategories", currentSelectedPastPaperCategory.id, "items", itemIdToDelete));
+                            showMessage("Item deleted successfully!");
+                            await renderPdfImageItems();
+                            resetPdfImageForm();
+                        } catch (e) {
+                            console.error("Error deleting PDF/Image item:", e);
+                            showMessage("Error deleting item.", 'error');
+                        } finally {
+                            hideLoading();
+                        }
+                    }
+                });
+            }
         });
+
+        cancelPdfImageEditBtn.addEventListener('click', resetPdfImageForm);
     </script>
 </body>
 </html>
