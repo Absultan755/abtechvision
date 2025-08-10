@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AB TECHVISION - MCQ Collection</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Light gray background */
+        }
+        .section {
+            display: none; /* Hidden by default */
+        }
+        .section.active {
+            display: block; /* Show active section */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .option-button {
+            @apply bg-blue-100 text-blue-800 py-2 px-4 rounded-md text-left w-full hover:bg-blue-200 transition duration-200 ease-in-out mb-2;
+        }
+        .option-button.correct {
+            @apply bg-green-200 text-green-800;
+        }
+        .option-button.incorrect {
+            @apply bg-red-200 text-red-800;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #60a5fa;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-wide mb-2 md:mb-0">AB Techvision</h1>
+            <nav>
+                <ul class="flex space-x-4 md:space-x-8">
+                    <li><a href="#home" class="nav-link text-lg hover:text-blue-200 transition duration-300 ease-in-out px-3 py-2 rounded-md" data-target="home">Home</a></li>
+                    <li><a href="#subjects" class="nav-link text-lg hover:text-blue-200 transition duration-300 ease-in-out px-3 py-2 rounded-md" data-target="subjects">Subjects</a></li>
+                    <li><a href="#blog" class="nav-link text-lg hover:text-blue-200 transition duration-300 ease-in-out px-3 py-2 rounded-md" data-target="blog">Blog</a></li>
+                    <li><a href="#past-papers-section" class="nav-link text-lg hover:text-blue-200 transition duration-300 ease-in-out px-3 py-2 rounded-md" data-target="past-papers-section">Past Papers</a></li>
+                    <li><a href="#contact" class="nav-link text-lg hover:text-blue-200 transition duration-300 ease-in-out px-3 py-2 rounded-md" data-target="contact">Contact</a></li>
+                    <li><a href="#about" class="nav-link text-lg hover:text-blue-200 transition duration-300 ease-in-out px-3 py-2 rounded-md" data-target="about">About Us</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 lg:p-10">
+
+        <section id="home" class="section active bg-white rounded-xl shadow-lg p-8 mb-8">
+            <div class="text-center py-16">
+                <h2 class="text-5xl font-extrabold text-blue-700 mb-6 leading-tight">Empowering Minds with Knowledge</h2>
+                <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                    AB TECHVISION is your ultimate destination for comprehensive Multiple Choice Questions (MCQs) designed for students and teachers. Prepare for exams, enhance your knowledge, and master any subject with our vast collection.
+                </p>
+                <a href="#subjects" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition duration-300 ease-in-out">
+                    Start Practicing MCQs
+                </a>
+            </div>
+        </section>
+
+        <section id="blog" class="section bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-4xl font-bold text-blue-700 mb-8 text-center">Our Blog</h2>
+
+            <!-- Add New Blog Post Form -->
+            <div id="add-edit-blog-section" class="bg-blue-50 p-6 rounded-lg shadow-md mb-8">
+                <h3 id="blog-form-title" class="text-2xl font-semibold text-blue-700 mb-4">Add a New Blog Post</h3>
+                <form id="add-blog-form">
+                    <div class="mb-4">
+                        <label for="blog-title" class="block text-gray-700 text-sm font-bold mb-2">Blog Title:</label>
+                        <input type="text" id="blog-title" name="title" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter blog post title" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="blog-content" class="block text-gray-700 text-sm font-bold mb-2">Blog Content:</label>
+                        <textarea id="blog-content" name="content" rows="8" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Write your blog post here..." required></textarea>
+                    </div>
+                    <button type="submit" id="submit-blog-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out">
+                        Add Blog Post
+                    </button>
+                    <button type="button" id="cancel-blog-edit-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out ml-4 hidden">
+                        Cancel Edit
+                    </button>
+                </form>
+            </div>
+
+            <div id="blog-posts-display" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Blog posts will be rendered here -->
+            </div>
+        </section>
+
+        <section id="past-papers-section" class="section bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-4xl font-bold text-blue-700 mb-8 text-center">Past Papers</h2>
+
+            <!-- List View for Past Paper Categories -->
+            <div id="past-papers-list-view">
+                <div id="add-past-paper-category-section" class="bg-green-50 p-6 rounded-lg shadow-md mb-8">
+                    <h3 class="text-2xl font-semibold text-green-700 mb-4">Add New Past Paper Category</h3>
+                    <form id="add-past-paper-category-form">
+                        <div class="mb-4">
+                            <label for="new-past-paper-category-name" class="block text-gray-700 text-sm font-bold mb-2">Category Name (e.g., FPSC, KPPSC):</label>
+                            <input type="text" id="new-past-paper-category-name" name="categoryName" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g., FPSC, KPPSC" required>
+                        </div>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out">
+                            Add Category
+                        </button>
+                    </form>
+                </div>
+
+                <div id="past-papers-categories-display" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <!-- Past Paper Category cards will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Detail View for Selected Past Paper Category -->
+            <div id="past-paper-detail-view" class="hidden">
+                <button id="back-to-past-papers-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full mb-6 transform hover:scale-105 transition duration-300 ease-in-out">
+                    &larr; Back to Categories
+                </button>
+                <h3 id="current-past-paper-title" class="text-3xl font-bold text-blue-700 mb-6 text-center"></h3>
+
+                <!-- Form to Add PDF/Image -->
+                <div id="add-edit-pdf-image-section" class="bg-green-50 p-6 rounded-lg shadow-md mb-8">
+                    <h4 id="pdf-image-form-title" class="text-2xl font-semibold text-green-700 mb-4">Add New PDF or Image</h4>
+                    <form id="add-pdf-image-form">
+                        <div class="mb-4">
+                            <label for="pdf-image-name" class="block text-gray-700 text-sm font-bold mb-2">Name (e.g., 2023 General Paper):</label>
+                            <input type="text" id="pdf-image-name" name="name" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g., 2023 General Paper" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="pdf-image-file" class="block text-gray-700 text-sm font-bold mb-2">Upload File (PDF or Image):</label>
+                            <input type="file" id="pdf-image-file" name="file" accept=".pdf,image/*" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <p class="text-sm text-gray-500 mt-1">Or provide a direct URL:</p>
+                        </div>
+                        <div class="mb-4">
+                            <label for="pdf-image-url" class="block text-gray-700 text-sm font-bold mb-2">External URL (optional):</label>
+                            <input type="url" id="pdf-image-url" name="url" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g., https://example.com/paper.pdf">
+                        </div>
+                        <div class="mb-6">
+                            <label for="pdf-image-type" class="block text-gray-700 text-sm font-bold mb-2">Type:</label>
+                            <select id="pdf-image-type" name="type" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                                <option value="">Select Type</option>
+                                <option value="pdf">PDF</option>
+                                <option value="image">Image</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="submit-pdf-image-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out">
+                            Add Item
+                        </button>
+                        <button type="button" id="cancel-pdf-image-edit-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out ml-4 hidden">
+                            Cancel Edit
+                        </button>
+                    </form>
+                    <p class="text-red-500 text-sm mt-4">
+                        <strong>Note:</strong> Files uploaded here will be stored in Supabase Storage. Providing an external URL is also an option.
+                    </p>
+                </div>
+
+                <!-- Display PDF/Image List -->
+                <div id="pdf-image-display" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- PDF and Image items will be rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <section id="subjects" class="section bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-4xl font-bold text-blue-700 mb-8 text-center">Explore Our Subjects</h2>
+
+            <div id="loading-indicator" class="text-center text-blue-600 text-xl font-semibold py-8">
+                Loading Subjects...
+            </div>
+
+            <!-- Section for displaying subjects -->
+            <div id="subjects-list-view">
+                <div id="subjects-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Subject cards will be rendered here -->
+                </div>
+
+                <!-- Form to add new subject -->
+                <div id="add-subject-section" class="bg-blue-50 p-6 rounded-lg shadow-md">
+                    <h3 class="text-2xl font-semibold text-blue-700 mb-4">Add a New Subject</h3>
+                    <form id="add-subject-form">
+                        <div class="mb-4">
+                            <label for="new-subject-name" class="block text-gray-700 text-sm font-bold mb-2">Subject Name:</label>
+                            <input type="text" id="new-subject-name" name="subjectName" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Physics, Chemistry" required>
+                        </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out">
+                            Add Subject
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Section for displaying MCQs of a selected subject -->
+            <div id="subject-detail-view" class="hidden">
+                <button id="back-to-subjects-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full mb-6 transform hover:scale-105 transition duration-300 ease-in-out">
+                    &larr; Back to Subjects
+                </button>
+                <h3 id="current-subject-title" class="text-3xl font-bold text-blue-700 mb-6 text-center"></h3>
+
+                <div id="quiz-controls" class="text-center mb-8">
+                    <button id="start-quiz-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transform hover:scale-105 transition duration-300 ease-in-out mr-4">
+                        Start Quiz for this Subject
+                    </button>
+                </div>
+
+                <!-- Add New MCQ Form (reused) -->
+                <div id="add-edit-mcq-section" class="bg-blue-50 p-6 rounded-lg shadow-md mb-8">
+                    <h3 id="mcq-form-title" class="text-2xl font-semibold text-blue-700 mb-4">Add a New MCQ</h3>
+                    <form id="add-mcq-form">
+                        <!-- Subject input removed as it will be implicitly set -->
+                        <div class="mb-4">
+                            <label for="mcq-question" class="block text-gray-700 text-sm font-bold mb-2">Question:</label>
+                            <textarea id="mcq-question" name="question" rows="3" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter the MCQ question" required></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label for="mcq-options" class="block text-gray-700 text-sm font-bold mb-2">Options (comma-separated):</label>
+                            <input type="text" id="mcq-options" name="options" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Option A, Option B, Option C, Option D" required>
+                        </div>
+                        <div class="mb-6">
+                            <label for="mcq-answer" class="block text-gray-700 text-sm font-bold mb-2">Correct Answer (exactly as in options):</label>
+                            <input type="text" id="mcq-answer" name="answer" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Option B" required>
+                        </div>
+                        <button type="submit" id="submit-mcq-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out">
+                            Add MCQ
+                        </button>
+                        <button type="button" id="cancel-edit-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out ml-4 hidden">
+                            Cancel Edit
+                        </button>
+                    </form>
+                </div>
+
+                <div id="mcqs-display" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- MCQs for the selected subject will be rendered here -->
+                </div>
+            </div>
+
+            <div id="quiz-section" class="hidden bg-blue-50 p-8 rounded-xl shadow-lg">
+                <h3 class="text-3xl font-bold text-blue-700 mb-6 text-center">Quiz Time!</h3>
+                <div id="quiz-question-container" class="mb-6">
+                    <p id="quiz-question" class="text-2xl font-semibold text-gray-800 mb-4"></p>
+                    <ol id="quiz-options" class="flex flex-col space-y-3 list-decimal list-inside pl-5">
+                    </ol>
+                    <div id="quiz-feedback" class="mt-4 text-center text-lg font-bold"></div>
+                </div>
+                <div class="flex justify-between items-center mt-8">
+                    <button id="prev-question-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transform hover:scale-105 transition duration-300 ease-in-out">
+                        Previous
+                    </button>
+                    <button id="next-question-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transform hover:scale-105 transition duration-300 ease-in-out">
+                        Next
+                    </button>
+                </div>
+                <div id="quiz-result" class="text-center mt-8 text-3xl font-bold text-blue-700 hidden">
+                </div>
+                <div class="text-center mt-8">
+                    <button id="quiz-back-to-subject-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transform hover:scale-105 transition duration-300 ease-in-out hidden">
+                        Back to Subject MCQs
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="section bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-4xl font-bold text-blue-700 mb-8 text-center">Get in Touch</h2>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="p-6 bg-blue-50 rounded-lg shadow-md">
+                    <h3 class="text-2xl font-semibold text-blue-700 mb-4">Contact Information</h3>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">Email:</span> info@abtechvision.com</p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">Phone:</span> +1 (123) 456-7890</p>
+                    <p class="text-gray-600 mb-2"><span class="font-medium">Address:</span> 123 MCQ Lane, Knowledge City, World</p>
+                    <div class="mt-6">
+                        <h4 class="text-xl font-semibold text-blue-700 mb-3">Follow Us:</h4>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-blue-600 hover:text-blue-800 transition duration-300 ease-in-out">Facebook</a>
+                            <a href="#" class="text-blue-600 hover:text-blue-800 transition duration-300 ease-in-out">Twitter</a>
+                            <a href="#" class="text-blue-600 hover:text-blue-800 transition duration-300 ease-in-out">LinkedIn</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 bg-blue-50 rounded-lg shadow-md">
+                    <h3 class="text-2xl font-semibold text-blue-700 mb-4">Send Us a Message</h3>
+                    <form>
+                        <div class="mb-4">
+                            <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Name:</label>
+                            <input type="text" id="name" name="name" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your Name">
+                        </div>
+                        <div class="mb-4">
+                            <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                            <input type="email" id="email" name="email" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@example.com">
+                        </div>
+                        <div class="mb-6">
+                            <label for="message" class="block text-gray-700 text-sm font-bold mb-2">Message:</label>
+                            <textarea id="message" name="message" rows="5" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your message..."></textarea>
+                        </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full focus:outline-none focus:shadow-outline transform hover:scale-105 transition duration-300 ease-in-out">
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="section bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-4xl font-bold text-blue-700 mb-8 text-center">About AB TECHVISION</h2>
+            <div class="text-lg text-gray-700 leading-relaxed">
+                <p class="mb-6">
+                    AB TECHVISION was founded with a clear mission: to revolutionize the way students learn and teachers teach through the power of Multiple Choice Questions. We understand the critical role MCQs play in modern education, from reinforcing concepts to preparing for competitive exams.
+                </p>
+                <p class="mb-6">
+                    Our platform is meticulously designed to cater to a diverse audience, including students from various academic levels seeking to solidify their understanding, and teachers looking for efficient tools to assess and engage their pupils. We believe that learning should be accessible, engaging, and effective.
+                </p>
+                <p class="mb-6">
+                    We offer a vast and ever-expanding library of MCQs across a multitude of subjects, ensuring that every user finds relevant and challenging content. Beyond just questions, AB TECHVISION provides detailed explanations, performance tracking, and a user-friendly interface to make the learning journey seamless and rewarding.
+                </p>
+                <p class="mb-6">
+                    Our commitment extends to supporting educators by providing robust features like custom quiz creation, class management, and insightful analytics, empowering them to deliver high-quality instruction and personalized feedback.
+                </p>
+                <p>
+                    Join AB TECHVISION today and embark on a journey of knowledge, mastery, and academic excellence. We are dedicated to being your trusted partner in education.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white p-6 text-center rounded-t-xl shadow-inner mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2025 AB TECHVISION. All rights reserved.</p>
+            <div class="flex justify-center space-x-4 mt-2">
+                <a href="#" class="hover:text-blue-400 transition duration-300 ease-in-out">Privacy Policy</a>
+                <a href="#" class="hover:text-blue-400 transition duration-300 ease-in-out">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom Modal for Alerts and Confirmations -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="modal-message" class="text-lg text-gray-700"></p>
+            <div id="modal-actions" class="mt-4 hidden">
+                <button id="modal-confirm-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full mr-2">Confirm</button>
+                <button id="modal-cancel-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-full">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <p>Loading...</p>
+    </div>
+
+    <script type="module">
+        // Supabase SDK Import
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+        // --- Supabase Configuration (REPLACE WITH YOUR ACTUAL SUPABASE DETAILS) ---
+        const SUPABASE_URL = 'https://aksgzmjuduqerdeueeix.supabase.co'; // e.g., 'https://aksgzmjuduqerdeueeix.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrc2d6bWp1ZHVxZXJkZXVlZWl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NTUyNTIsImV4cCI6MjA3MDAzMTI1Mn0.Pq6KfzfInM_GrQKYE8qBfG4jySjMHGV_m3_AsAgCAiA'; // e.g., 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzgwNTY3ODksImV4cCI6MTY3ODk1Njc4OX0.YOUR_ACTUAL_KEY'
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Global variables
+        let allSubjectsData = {}; // Stores data like { "subjectId": {id: "uuid", name: "SubjectName"} }
+        let allBlogPosts = []; // Stores all blog posts
+        let allPastPapersData = []; // Stores all past paper categories and their content
+
+        let currentSelectedSubject = null; // Tracks the currently viewed subject's Supabase ID
+        let currentQuizMcqs = []; // MCQs for the current quiz session
+        let currentQuestionIndex = 0;
+        let quizScore = 0;
+        let editingMcqId = null; // To store the ID of the MCQ being edited
+        let editingBlogPostId = null; // To store the ID of the blog post being edited
+        let currentSelectedPastPaperCategory = null; // Tracks the currently viewed past paper category's Supabase ID
+        let editingPdfImageId = null; // To store the ID of the PDF/Image being edited
+
+        // DOM Elements
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.section');
+        const mcqsDisplay = document.getElementById('mcqs-display');
+        const addMcqForm = document.getElementById('add-mcq-form');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const quizSection = document.getElementById('quiz-section');
+        const addEditMcqSection = document.getElementById('add-edit-mcq-section');
+        const mcqFormTitle = document.getElementById('mcq-form-title');
+        const submitMcqBtn = document.getElementById('submit-mcq-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const quizQuestion = document.getElementById('quiz-question');
+        const quizOptions = document.getElementById('quiz-options');
+        const quizFeedback = document.getElementById('quiz-feedback');
+        const prevQuestionBtn = document.getElementById('prev-question-btn');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const quizResult = document.getElementById('quiz-result');
+        const quizBackToSubjectBtn = document.getElementById('quiz-back-to-subject-btn');
+
+        const subjectsListView = document.getElementById('subjects-list-view');
+        const subjectsListDiv = document.getElementById('subjects-list');
+        const addSubjectSection = document.getElementById('add-subject-section');
+        const addSubjectForm = document.getElementById('add-subject-form');
+        const newSubjectNameInput = document.getElementById('new-subject-name');
+        const subjectDetailView = document.getElementById('subject-detail-view');
+        const backToSubjectsBtn = document.getElementById('back-to-subjects-btn');
+        const currentSubjectTitle = document.getElementById('current-subject-title');
+
+        const addEditBlogSection = document.getElementById('add-edit-blog-section');
+        const blogFormTitle = document.getElementById('blog-form-title');
+        const addBlogForm = document.getElementById('add-blog-form');
+        const blogTitleInput = document.getElementById('blog-title');
+        const blogContentInput = document.getElementById('blog-content');
+        const submitBlogBtn = document.getElementById('submit-blog-btn');
+        const cancelBlogEditBtn = document.getElementById('cancel-blog-edit-btn');
+        const blogPostsDisplay = document.getElementById('blog-posts-display');
+
+        const pastPapersSection = document.getElementById('past-papers-section');
+        const pastPapersListView = document.getElementById('past-papers-list-view');
+        const addPastPaperCategoryForm = document.getElementById('add-past-paper-category-form');
+        const newPastPaperCategoryNameInput = document.getElementById('new-past-paper-category-name');
+        const pastPapersCategoriesDisplay = document.getElementById('past-papers-categories-display');
+
+        const pastPaperDetailView = document.getElementById('past-paper-detail-view');
+        const backToPastPapersBtn = document.getElementById('back-to-past-papers-btn');
+        const currentPastPaperTitle = document.getElementById('current-past-paper-title');
+        const addEditPdfImageSection = document.getElementById('add-edit-pdf-image-section');
+        const pdfImageFormTitle = document.getElementById('pdf-image-form-title');
+        const addPdfImageForm = document.getElementById('add-pdf-image-form');
+        const pdfImageNameInput = document.getElementById('pdf-image-name');
+        const pdfImageFileInput = document.getElementById('pdf-image-file');
+        const pdfImageUrlInput = document.getElementById('pdf-image-url');
+        const pdfImageTypeInput = document.getElementById('pdf-image-type');
+        const submitPdfImageBtn = document.getElementById('submit-pdf-image-btn');
+        const cancelPdfImageEditBtn = document.getElementById('cancel-pdf-image-edit-btn');
+        const pdfImageDisplay = document.getElementById('pdf-image-display');
+
+
+        // Custom Modal Elements
+        const modal = document.getElementById('myModal');
+        const modalMessage = document.getElementById('modal-message');
+        const closeButton = document.querySelector('.close-button');
+        const modalActions = document.getElementById('modal-actions');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+        // Custom Modal Logic (replaces alert and confirm)
+        function showModal(message, isConfirmation = false) {
+            modalMessage.textContent = message;
+            modal.style.display = 'flex';
+            if (isConfirmation) {
+                modalActions.classList.remove('hidden');
+                return new Promise((resolve) => {
+                    modalConfirmBtn.onclick = () => {
+                        modal.style.display = 'none';
+                        modalActions.classList.add('hidden');
+                        resolve(true);
+                    };
+                    modalCancelBtn.onclick = () => {
+                        modal.style.display = 'none';
+                        modalActions.classList.add('hidden');
+                        resolve(false);
+                    };
+                });
+            } else {
+                modalActions.classList.add('hidden');
+                return Promise.resolve(false); // For non-confirmation modals
+            }
+        }
+        closeButton.onclick = () => {
+            modal.style.display = 'none';
+        };
+        window.onclick = (event) => {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        };
+
+        // Loading Overlay Logic
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // --- Core Application Logic ---
+
+        // 1. Navigation
+        function showSection(targetId) {
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(targetId).classList.add('active');
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = e.target.dataset.target;
+                showSection(targetId);
+            });
+        });
+
+        // 2. Data Fetching and Rendering
+        async function fetchData(table, query = '*') {
+            showLoading();
+            let { data, error } = await supabase.from(table).select(query);
+            hideLoading();
+            if (error) {
+                showModal('Error fetching data: ' + error.message);
+                console.error(error);
+                return [];
+            }
+            return data;
+        }
+
+        // --- Subjects Logic ---
+
+        async function fetchAndRenderSubjects() {
+            loadingIndicator.classList.remove('hidden');
+            const subjects = await fetchData('subjects');
+            loadingIndicator.classList.add('hidden');
+            subjectsListDiv.innerHTML = '';
+            allSubjectsData = {};
+            if (subjects) {
+                subjects.forEach(subject => {
+                    allSubjectsData[subject.id] = subject;
+                    renderSubjectCard(subject);
+                });
+            }
+        }
+
+        function renderSubjectCard(subject) {
+            const card = document.createElement('div');
+            card.className = 'bg-blue-100 p-6 rounded-xl shadow-md cursor-pointer hover:bg-blue-200 transition duration-300 ease-in-out transform hover:scale-105';
+            card.innerHTML = `<h4 class="text-2xl font-bold text-blue-700">${subject.name}</h4>`;
+            card.addEventListener('click', () => {
+                currentSelectedSubject = subject;
+                showSubjectDetailView(subject);
+            });
+            subjectsListDiv.appendChild(card);
+        }
+
+        async function showSubjectDetailView(subject) {
+            subjectsListView.classList.add('hidden');
+            subjectDetailView.classList.remove('hidden');
+            currentSubjectTitle.textContent = `MCQs for ${subject.name}`;
+            await fetchAndRenderMcqs(subject.id);
+        }
+
+        async function addSubject(e) {
+            e.preventDefault();
+            const subjectName = newSubjectNameInput.value.trim();
+            if (!subjectName) return;
+
+            showLoading();
+            const { data, error } = await supabase
+                .from('subjects')
+                .insert([{ name: subjectName }]);
+            hideLoading();
+
+            if (error) {
+                showModal('Error adding subject: ' + error.message);
+                console.error(error);
+            } else {
+                showModal(`Subject "${subjectName}" added successfully!`);
+                newSubjectNameInput.value = '';
+                fetchAndRenderSubjects();
+            }
+        }
+        addSubjectForm.addEventListener('submit', addSubject);
+
+        backToSubjectsBtn.addEventListener('click', () => {
+            subjectsListView.classList.remove('hidden');
+            subjectDetailView.classList.add('hidden');
+            currentSelectedSubject = null;
+        });
+
+        // --- MCQs Logic ---
+
+        async function fetchAndRenderMcqs(subjectId) {
+            mcqsDisplay.innerHTML = '';
+            const mcqs = await fetchData('mcqs', '*, subject_id(*)');
+            const filteredMcqs = mcqs.filter(mcq => mcq.subject_id.id === subjectId);
+            if (filteredMcqs.length > 0) {
+                filteredMcqs.forEach(mcq => renderMcqCard(mcq));
+            } else {
+                mcqsDisplay.innerHTML = '<p class="text-gray-500 text-center col-span-full">No MCQs found for this subject. Add the first one!</p>';
+            }
+        }
+
+        function renderMcqCard(mcq) {
+            const card = document.createElement('div');
+            card.className = 'bg-gray-50 p-6 rounded-xl shadow-md';
+            const optionsHtml = JSON.parse(mcq.options).map(opt => `<li>${opt}</li>`).join('');
+            card.innerHTML = `
+                <p class="text-lg font-semibold mb-4">${mcq.question}</p>
+                <ul class="list-disc list-inside text-gray-700 mb-4">
+                    ${optionsHtml}
+                </ul>
+                <p class="font-bold text-green-700">Answer: ${mcq.answer}</p>
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button class="edit-mcq-btn bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded-full text-sm transition duration-200" data-id="${mcq.id}">Edit</button>
+                    <button class="delete-mcq-btn bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-full text-sm transition duration-200" data-id="${mcq.id}">Delete</button>
+                </div>
+            `;
+            mcqsDisplay.appendChild(card);
+        }
+
+        async function handleMcqSubmit(e) {
+            e.preventDefault();
+            const question = document.getElementById('mcq-question').value.trim();
+            const options = document.getElementById('mcq-options').value.split(',').map(opt => opt.trim());
+            const answer = document.getElementById('mcq-answer').value.trim();
+
+            if (!question || options.length < 2 || !answer || !currentSelectedSubject) {
+                showModal('Please fill out all fields and ensure there are at least two options.');
+                return;
+            }
+
+            const mcqData = {
+                question: question,
+                options: JSON.stringify(options),
+                answer: answer,
+                subject_id: currentSelectedSubject.id
+            };
+
+            showLoading();
+            if (editingMcqId) {
+                // Update existing MCQ
+                const { error } = await supabase.from('mcqs').update(mcqData).eq('id', editingMcqId);
+                if (error) {
+                    showModal('Error updating MCQ: ' + error.message);
+                } else {
+                    showModal('MCQ updated successfully!');
+                }
+            } else {
+                // Add new MCQ
+                const { error } = await supabase.from('mcqs').insert([mcqData]);
+                if (error) {
+                    showModal('Error adding MCQ: ' + error.message);
+                } else {
+                    showModal('MCQ added successfully!');
+                }
+            }
+            hideLoading();
+            resetMcqForm();
+            fetchAndRenderMcqs(currentSelectedSubject.id);
+        }
+        addMcqForm.addEventListener('submit', handleMcqSubmit);
+
+        function resetMcqForm() {
+            addMcqForm.reset();
+            mcqFormTitle.textContent = 'Add a New MCQ';
+            submitMcqBtn.textContent = 'Add MCQ';
+            cancelEditBtn.classList.add('hidden');
+            editingMcqId = null;
+        }
+        cancelEditBtn.addEventListener('click', resetMcqForm);
+
+        mcqsDisplay.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-mcq-btn')) {
+                const mcqId = e.target.dataset.id;
+                const confirmation = await showModal('Are you sure you want to delete this MCQ?', true);
+                if (confirmation) {
+                    showLoading();
+                    const { error } = await supabase.from('mcqs').delete().eq('id', mcqId);
+                    hideLoading();
+                    if (error) {
+                        showModal('Error deleting MCQ: ' + error.message);
+                    } else {
+                        showModal('MCQ deleted successfully!');
+                        fetchAndRenderMcqs(currentSelectedSubject.id);
+                    }
+                }
+            } else if (e.target.classList.contains('edit-mcq-btn')) {
+                const mcqId = e.target.dataset.id;
+                const mcq = await (await supabase.from('mcqs').select('*').eq('id', mcqId).single()).data;
+                if (mcq) {
+                    editingMcqId = mcq.id;
+                    mcqFormTitle.textContent = 'Edit MCQ';
+                    submitMcqBtn.textContent = 'Update MCQ';
+                    cancelEditBtn.classList.remove('hidden');
+
+                    document.getElementById('mcq-question').value = mcq.question;
+                    document.getElementById('mcq-options').value = JSON.parse(mcq.options).join(', ');
+                    document.getElementById('mcq-answer').value = mcq.answer;
+                }
+            }
+        });
+
+        // --- Quiz Logic ---
+        startQuizBtn.addEventListener('click', startQuiz);
+        quizBackToSubjectBtn.addEventListener('click', () => {
+            quizSection.classList.add('hidden');
+            subjectDetailView.classList.remove('hidden');
+            quizBackToSubjectBtn.classList.add('hidden');
+        });
+
+        async function startQuiz() {
+            if (!currentSelectedSubject) return;
+
+            currentQuizMcqs = await fetchData('mcqs', '*, subject_id(*)');
+            currentQuizMcqs = currentQuizMcqs.filter(mcq => mcq.subject_id.id === currentSelectedSubject.id);
+
+            if (currentQuizMcqs.length === 0) {
+                showModal('There are no MCQs available for this subject to start a quiz.');
+                return;
+            }
+
+            // Shuffle the MCQs
+            currentQuizMcqs.sort(() => Math.random() - 0.5);
+
+            subjectDetailView.classList.add('hidden');
+            quizSection.classList.remove('hidden');
+
+            currentQuestionIndex = 0;
+            quizScore = 0;
+            quizResult.classList.add('hidden');
+            quizBackToSubjectBtn.classList.add('hidden');
+            renderQuizQuestion();
+        }
+
+        function renderQuizQuestion() {
+            const currentMcq = currentQuizMcqs[currentQuestionIndex];
+            if (!currentMcq) {
+                endQuiz();
+                return;
+            }
+
+            quizQuestion.textContent = `${currentQuestionIndex + 1}. ${currentMcq.question}`;
+            quizOptions.innerHTML = '';
+            quizFeedback.textContent = '';
+
+            const options = JSON.parse(currentMcq.options);
+            options.sort(() => Math.random() - 0.5); // Shuffle options
+
+            options.forEach(option => {
+                const optionButton = document.createElement('li');
+                optionButton.className = 'option-button';
+                optionButton.textContent = option;
+                optionButton.onclick = () => handleAnswer(option, currentMcq.answer);
+                quizOptions.appendChild(optionButton);
+            });
+
+            // Handle navigation buttons
+            prevQuestionBtn.disabled = currentQuestionIndex === 0;
+            nextQuestionBtn.textContent = (currentQuestionIndex === currentQuizMcqs.length - 1) ? 'Finish Quiz' : 'Next';
+        }
+
+        function handleAnswer(selectedOption, correctAnswer) {
+            const options = quizOptions.querySelectorAll('.option-button');
+            let isCorrect = selectedOption === correctAnswer;
+
+            options.forEach(option => {
+                option.disabled = true; // Disable all buttons after an answer is selected
+                if (option.textContent === correctAnswer) {
+                    option.classList.add('correct');
+                } else if (option.textContent === selectedOption && !isCorrect) {
+                    option.classList.add('incorrect');
+                }
+            });
+
+            if (isCorrect) {
+                quizScore++;
+                quizFeedback.textContent = 'Correct!';
+                quizFeedback.className = 'mt-4 text-center text-lg font-bold text-green-600';
+            } else {
+                quizFeedback.textContent = `Incorrect. The correct answer was "${correctAnswer}".`;
+                quizFeedback.className = 'mt-4 text-center text-lg font-bold text-red-600';
+            }
+        }
+
+        nextQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < currentQuizMcqs.length - 1) {
+                currentQuestionIndex++;
+                renderQuizQuestion();
+            } else {
+                endQuiz();
+            }
+        });
+
+        prevQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuizQuestion();
+            }
+        });
+
+        function endQuiz() {
+            quizQuestion.textContent = '';
+            quizOptions.innerHTML = '';
+            quizFeedback.textContent = '';
+            quizResult.classList.remove('hidden');
+            quizResult.textContent = `Quiz Finished! You scored ${quizScore} out of ${currentQuizMcqs.length}.`;
+            quizBackToSubjectBtn.classList.remove('hidden');
+        }
+
+        // --- Blog Logic ---
+
+        async function fetchAndRenderBlogPosts() {
+            blogPostsDisplay.innerHTML = '';
+            const posts = await fetchData('blog_posts');
+            allBlogPosts = posts;
+            if (posts && posts.length > 0) {
+                posts.forEach(post => renderBlogPost(post));
+            } else {
+                blogPostsDisplay.innerHTML = '<p class="text-gray-500 text-center col-span-full">No blog posts found. Be the first to add one!</p>';
+            }
+        }
+
+        function renderBlogPost(post) {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-6 rounded-xl shadow-md border border-gray-200';
+            card.innerHTML = `
+                <h4 class="text-2xl font-bold text-blue-700 mb-2">${post.title}</h4>
+                <p class="text-sm text-gray-500 mb-4">Published on ${new Date(post.created_at).toLocaleDateString()}</p>
+                <div class="prose max-w-none text-gray-700">
+                    <p>${post.content.substring(0, 200)}...</p>
+                </div>
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button class="read-more-btn bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-full text-sm transition duration-200" data-id="${post.id}">Read More</button>
+                    <button class="edit-blog-btn bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded-full text-sm transition duration-200" data-id="${post.id}">Edit</button>
+                    <button class="delete-blog-btn bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-full text-sm transition duration-200" data-id="${post.id}">Delete</button>
+                </div>
+            `;
+            blogPostsDisplay.appendChild(card);
+        }
+
+        async function handleBlogSubmit(e) {
+            e.preventDefault();
+            const title = blogTitleInput.value.trim();
+            const content = blogContentInput.value.trim();
+
+            if (!title || !content) {
+                showModal('Please enter a title and content for the blog post.');
+                return;
+            }
+
+            const postData = {
+                title: title,
+                content: content
+            };
+
+            showLoading();
+            if (editingBlogPostId) {
+                const { error } = await supabase.from('blog_posts').update(postData).eq('id', editingBlogPostId);
+                if (error) {
+                    showModal('Error updating blog post: ' + error.message);
+                } else {
+                    showModal('Blog post updated successfully!');
+                }
+            } else {
+                const { error } = await supabase.from('blog_posts').insert([postData]);
+                if (error) {
+                    showModal('Error adding blog post: ' + error.message);
+                } else {
+                    showModal('Blog post added successfully!');
+                }
+            }
+            hideLoading();
+            resetBlogForm();
+            fetchAndRenderBlogPosts();
+        }
+        addBlogForm.addEventListener('submit', handleBlogSubmit);
+
+        function resetBlogForm() {
+            addBlogForm.reset();
+            blogFormTitle.textContent = 'Add a New Blog Post';
+            submitBlogBtn.textContent = 'Add Blog Post';
+            cancelBlogEditBtn.classList.add('hidden');
+            editingBlogPostId = null;
+        }
+        cancelBlogEditBtn.addEventListener('click', resetBlogForm);
+
+        blogPostsDisplay.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-blog-btn')) {
+                const postId = e.target.dataset.id;
+                const confirmation = await showModal('Are you sure you want to delete this blog post?', true);
+                if (confirmation) {
+                    showLoading();
+                    const { error } = await supabase.from('blog_posts').delete().eq('id', postId);
+                    hideLoading();
+                    if (error) {
+                        showModal('Error deleting blog post: ' + error.message);
+                    } else {
+                        showModal('Blog post deleted successfully!');
+                        fetchAndRenderBlogPosts();
+                    }
+                }
+            } else if (e.target.classList.contains('edit-blog-btn')) {
+                const postId = e.target.dataset.id;
+                const post = allBlogPosts.find(p => p.id === postId);
+                if (post) {
+                    editingBlogPostId = post.id;
+                    blogFormTitle.textContent = 'Edit Blog Post';
+                    submitBlogBtn.textContent = 'Update Blog Post';
+                    cancelBlogEditBtn.classList.remove('hidden');
+
+                    blogTitleInput.value = post.title;
+                    blogContentInput.value = post.content;
+                }
+            } else if (e.target.classList.contains('read-more-btn')) {
+                const postId = e.target.dataset.id;
+                const post = allBlogPosts.find(p => p.id === postId);
+                if (post) {
+                    showModal(`<h3>${post.title}</h3><p>${post.content}</p>`);
+                }
+            }
+        });
+
+
+        // --- Past Papers Logic ---
+
+        async function fetchAndRenderPastPaperCategories() {
+            pastPapersCategoriesDisplay.innerHTML = '';
+            const categories = await fetchData('past_paper_categories');
+            allPastPapersData = categories;
+            if (categories && categories.length > 0) {
+                categories.forEach(cat => renderPastPaperCategoryCard(cat));
+            } else {
+                pastPapersCategoriesDisplay.innerHTML = '<p class="text-gray-500 text-center col-span-full">No past paper categories found. Add the first one!</p>';
+            }
+        }
+
+        function renderPastPaperCategoryCard(category) {
+            const card = document.createElement('div');
+            card.className = 'bg-green-100 p-6 rounded-xl shadow-md cursor-pointer hover:bg-green-200 transition duration-300 ease-in-out transform hover:scale-105';
+            card.innerHTML = `<h4 class="text-2xl font-bold text-green-700">${category.name}</h4>`;
+            card.addEventListener('click', () => {
+                currentSelectedPastPaperCategory = category;
+                showPastPaperDetailView(category);
+            });
+            pastPapersCategoriesDisplay.appendChild(card);
+        }
+
+        async function showPastPaperDetailView(category) {
+            pastPapersListView.classList.add('hidden');
+            pastPaperDetailView.classList.remove('hidden');
+            currentPastPaperTitle.textContent = `Past Papers for ${category.name}`;
+            await fetchAndRenderPdfsImages(category.id);
+        }
+
+        backToPastPapersBtn.addEventListener('click', () => {
+            pastPapersListView.classList.remove('hidden');
+            pastPaperDetailView.classList.add('hidden');
+            currentSelectedPastPaperCategory = null;
+        });
+
+        async function addPastPaperCategory(e) {
+            e.preventDefault();
+            const categoryName = newPastPaperCategoryNameInput.value.trim();
+            if (!categoryName) return;
+
+            showLoading();
+            const { error } = await supabase.from('past_paper_categories').insert([{ name: categoryName }]);
+            hideLoading();
+
+            if (error) {
+                showModal('Error adding category: ' + error.message);
+                console.error(error);
+            } else {
+                showModal(`Category "${categoryName}" added successfully!`);
+                newPastPaperCategoryNameInput.value = '';
+                fetchAndRenderPastPaperCategories();
+            }
+        }
+        addPastPaperCategoryForm.addEventListener('submit', addPastPaperCategory);
+
+        async function fetchAndRenderPdfsImages(categoryId) {
+            pdfImageDisplay.innerHTML = '';
+            const items = await fetchData('past_papers', '*, category_id(*)');
+            const filteredItems = items.filter(item => item.category_id.id === categoryId);
+            if (filteredItems.length > 0) {
+                filteredItems.forEach(item => renderPdfImageCard(item));
+            } else {
+                pdfImageDisplay.innerHTML = '<p class="text-gray-500 text-center col-span-full">No past papers found for this category. Add the first one!</p>';
+            }
+        }
+
+        function renderPdfImageCard(item) {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-6 rounded-xl shadow-md border border-gray-200';
+            let content;
+            if (item.type === 'image') {
+                content = `<img src="${item.url}" alt="${item.name}" class="w-full h-auto rounded-lg mb-4">`;
+            } else {
+                content = `<p class="text-blue-600 text-lg font-semibold mb-4">PDF Document</p>`;
+            }
+            card.innerHTML = `
+                <h4 class="text-xl font-bold text-blue-700 mb-2">${item.name}</h4>
+                ${content}
+                <div class="flex justify-between items-center mt-4">
+                    <a href="${item.url}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full text-sm">View</a>
+                    <div>
+                        <button class="edit-pdf-image-btn bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-3 rounded-full text-sm transition duration-200" data-id="${item.id}">Edit</button>
+                        <button class="delete-pdf-image-btn bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-full text-sm transition duration-200" data-id="${item.id}">Delete</button>
+                    </div>
+                </div>
+            `;
+            pdfImageDisplay.appendChild(card);
+        }
+
+        async function handlePdfImageSubmit(e) {
+            e.preventDefault();
+            const name = pdfImageNameInput.value.trim();
+            const type = pdfImageTypeInput.value;
+            let url;
+
+            if (pdfImageFileInput.files.length > 0) {
+                // Handle file upload
+                showLoading();
+                const file = pdfImageFileInput.files[0];
+                const filePath = `public/past_papers/${Date.now()}_${file.name}`;
+                const { data, error } = await supabase.storage.from('past_papers_bucket').upload(filePath, file);
+
+                if (error) {
+                    hideLoading();
+                    showModal('Error uploading file: ' + error.message);
+                    console.error(error);
+                    return;
+                }
+                const publicUrl = supabase.storage.from('past_papers_bucket').getPublicUrl(filePath);
+                url = publicUrl.data.publicUrl;
+                hideLoading();
+
+            } else if (pdfImageUrlInput.value.trim()) {
+                // Use external URL
+                url = pdfImageUrlInput.value.trim();
+            } else {
+                showModal('Please upload a file or provide a URL.');
+                return;
+            }
+
+            if (!name || !url || !type) {
+                showModal('Please fill out all required fields.');
+                return;
+            }
+
+            const itemData = {
+                name: name,
+                type: type,
+                url: url,
+                category_id: currentSelectedPastPaperCategory.id
+            };
+
+            showLoading();
+            if (editingPdfImageId) {
+                const { error } = await supabase.from('past_papers').update(itemData).eq('id', editingPdfImageId);
+                if (error) {
+                    showModal('Error updating item: ' + error.message);
+                } else {
+                    showModal('Item updated successfully!');
+                }
+            } else {
+                const { error } = await supabase.from('past_papers').insert([itemData]);
+                if (error) {
+                    showModal('Error adding item: ' + error.message);
+                } else {
+                    showModal('Item added successfully!');
+                }
+            }
+            hideLoading();
+            resetPdfImageForm();
+            fetchAndRenderPdfsImages(currentSelectedPastPaperCategory.id);
+        }
+        addPdfImageForm.addEventListener('submit', handlePdfImageSubmit);
+
+        function resetPdfImageForm() {
+            addPdfImageForm.reset();
+            pdfImageFormTitle.textContent = 'Add New PDF or Image';
+            submitPdfImageBtn.textContent = 'Add Item';
+            cancelPdfImageEditBtn.classList.add('hidden');
+            editingPdfImageId = null;
+        }
+        cancelPdfImageEditBtn.addEventListener('click', resetPdfImageForm);
+
+        pdfImageDisplay.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-pdf-image-btn')) {
+                const itemId = e.target.dataset.id;
+                const confirmation = await showModal('Are you sure you want to delete this item?', true);
+                if (confirmation) {
+                    showLoading();
+                    const { error } = await supabase.from('past_papers').delete().eq('id', itemId);
+                    hideLoading();
+                    if (error) {
+                        showModal('Error deleting item: ' + error.message);
+                    } else {
+                        showModal('Item deleted successfully!');
+                        fetchAndRenderPdfsImages(currentSelectedPastPaperCategory.id);
+                    }
+                }
+            } else if (e.target.classList.contains('edit-pdf-image-btn')) {
+                const itemId = e.target.dataset.id;
+                const item = await (await supabase.from('past_papers').select('*').eq('id', itemId).single()).data;
+                if (item) {
+                    editingPdfImageId = item.id;
+                    pdfImageFormTitle.textContent = 'Edit Item';
+                    submitPdfImageBtn.textContent = 'Update Item';
+                    cancelPdfImageEditBtn.classList.remove('hidden');
+
+                    pdfImageNameInput.value = item.name;
+                    pdfImageUrlInput.value = item.url;
+                    pdfImageTypeInput.value = item.type;
+                }
+            }
+        });
+
+
+        // Initial data fetch on page load
+        window.addEventListener('load', () => {
+            fetchAndRenderSubjects();
+            fetchAndRenderBlogPosts();
+            fetchAndRenderPastPaperCategories();
+        });
+    </script>
+</body>
+</html>
